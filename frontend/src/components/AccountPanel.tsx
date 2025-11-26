@@ -15,7 +15,7 @@ interface AccountPanelProps {
 const AccountPanel = ({ open, user, onClose, onSave }: AccountPanelProps) => {
   const [displayName, setDisplayName] = useState(user?.display_name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
-  const [status, setStatus] = useState<"idle" | "saving" | "success">("idle");
+  const [status, setStatus] = useState<"idle" | "saving">("idle");
   const [error, setError] = useState<string | null>(null);
 
   if (!open || !user) {
@@ -28,9 +28,6 @@ const AccountPanel = ({ open, user, onClose, onSave }: AccountPanelProps) => {
   };
 
   const markDirty = () => {
-    if (status === "success") {
-      setStatus("idle");
-    }
     if (error) {
       setError(null);
     }
@@ -42,7 +39,7 @@ const AccountPanel = ({ open, user, onClose, onSave }: AccountPanelProps) => {
     setError(null);
     try {
       await onSave({ display_name: displayName, email });
-      setStatus("success");
+      handleClose();
     } catch (err) {
       setStatus("idle");
       setError(getErrorMessage(err));
@@ -60,11 +57,11 @@ const AccountPanel = ({ open, user, onClose, onSave }: AccountPanelProps) => {
         <div className="account-page-header">
           <div>
             <p className="account-page-kicker">Account</p>
-            <h2>{user ? getDisplayName(user) : ""}</h2>
-            {user && <p className="account-page-subtitle">{user.email}</p>}
+            <h2>{getDisplayName(user)}</h2>
+            {user.email && <p className="account-page-subtitle">{user.email}</p>}
           </div>
-          <button className="secondary" onClick={handleClose}>
-            Close
+          <button className="icon-button" aria-label="Close account panel" onClick={handleClose}>
+            ×
           </button>
         </div>
 
@@ -95,8 +92,6 @@ const AccountPanel = ({ open, user, onClose, onSave }: AccountPanelProps) => {
           </label>
 
           {error && <p className="error">{error}</p>}
-          {status === "success" && <p className="success">Profile updated!</p>}
-
           <div className="account-form-actions">
             <button type="submit" className="primary" disabled={status === "saving"}>
               {status === "saving" ? "Saving..." : "Save changes"}

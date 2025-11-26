@@ -55,10 +55,22 @@ const UserMenu = ({ user, onAccount, onLogout }: UserMenuProps) => {
       {open && (
         <div className="user-menu-popover" role="menu">
           <p className="user-menu-name">{getDisplayName(user)}</p>
-          <button className="user-menu-item" onClick={() => { setOpen(false); onAccount(); }}>
+          <button
+            className="primary user-menu-item"
+            onClick={() => {
+              setOpen(false);
+              onAccount();
+            }}
+          >
             Account
           </button>
-          <button className="user-menu-item" onClick={() => { setOpen(false); onLogout(); }}>
+          <button
+            className="primary user-menu-item"
+            onClick={() => {
+              setOpen(false);
+              onLogout();
+            }}
+          >
             Log out
           </button>
         </div>

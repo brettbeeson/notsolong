@@ -7,11 +7,14 @@ interface TitleViewerProps {
   onVote: (quoteId: number, value: -1 | 0 | 1) => void;
   voteDisabledFor?: number | null;
   onAddNoSoLong: () => void;
-  onAddTitle: () => void;
   userVotes: Record<number, -1 | 0 | 1 | undefined>;
   currentUserEmail?: string | null;
   onEditNoSoLong: (quote: NoSoLong) => void;
   onDeleteNoSoLong: (quote: NoSoLong) => void;
+  showNavigation: boolean;
+  onBack: () => void;
+  onNext: () => void;
+  canGoBack: boolean;
 }
 
 const TitleViewer = ({
@@ -20,11 +23,14 @@ const TitleViewer = ({
   onVote,
   voteDisabledFor,
   onAddNoSoLong,
-  onAddTitle,
   userVotes,
   currentUserEmail,
   onEditNoSoLong,
   onDeleteNoSoLong,
+  showNavigation,
+  onBack,
+  onNext,
+  canGoBack,
 }: TitleViewerProps) => {
   if (loading) {
     return <div className="panel">Loading a fresh Title...</div>;
@@ -44,6 +50,7 @@ const TitleViewer = ({
   const userQuote = currentUserEmail
     ? allQuotes.find((quote) => quote.user.email === currentUserEmail)
     : null;
+  const canAddRecap = !userQuote;
 
   const handlePrimaryCta = () => {
     if (userQuote) {
@@ -56,41 +63,57 @@ const TitleViewer = ({
   return (
     <section className="panel title-viewer">
       <header className="title-header">
-        <div>
+        <div className="title-header-copy">
           <p className="category">{title.category.toUpperCase()}</p>
           <h1>{title.name}</h1>
           {authorName && <p className="author">by {authorName}</p>}
         </div>
-        <div className="title-header-actions">
-          <div className="cta-group">
-            <button className="secondary button-medium" onClick={onAddTitle}>
-            +&nbsp;Title
-            </button>
-            
-            {!userQuote && (
-            
-            
-            <button className="primary button-medium" onClick={handlePrimaryCta}>
-              +&nbsp;Recap
-            </button>
-            )}
-            
+        {showNavigation && (
+          <div className="title-header-actions">
+            <div className="title-nav-controls">
+              <button
+                type="button"
+                className="title-nav-button"
+                onClick={onBack}
+                disabled={!canGoBack || loading}
+                aria-label="Show previous title"
+              >
+                ←
+              </button>
+              <button
+                type="button"
+                className="title-nav-button"
+                onClick={onNext}
+                disabled={loading}
+                aria-label="Show next title"
+              >
+                →
+              </button>
+            </div>
           </div>
-          
-        </div>
+        )}
       </header>
       <div className="title-recaps">
         {top_nosolong ? (
-          <NoSoLongCard
-            quote={top_nosolong}
-            highlight
-            owned={userQuote?.id === top_nosolong.id}
-            onVote={onVote}
-            disabled={voteDisabledFor === top_nosolong.id}
-            userVoteOverride={userVotes[top_nosolong.id] ?? null}
-            onEdit={onEditNoSoLong}
-            onDelete={onDeleteNoSoLong}
-          />
+          <>
+            <NoSoLongCard
+              quote={top_nosolong}
+              highlight
+              owned={userQuote?.id === top_nosolong.id}
+              onVote={onVote}
+              disabled={voteDisabledFor === top_nosolong.id}
+              userVoteOverride={userVotes[top_nosolong.id] ?? null}
+              onEdit={onEditNoSoLong}
+              onDelete={onDeleteNoSoLong}
+            />
+            {canAddRecap && (
+              <div className="add-recap-inline">
+                <button className="primary" onClick={handlePrimaryCta}>
+                  Add your own
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="empty-state">
             <p>No recaps yet. Add yours!</p>

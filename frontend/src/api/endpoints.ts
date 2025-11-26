@@ -9,9 +9,20 @@ import type {
   User,
 } from "../types/api";
 
-export const fetchRandomTitle = async (category?: TitleCategory) => {
+export const fetchRandomTitle = async (options?: {
+  category?: TitleCategory;
+  exclude?: number[];
+}) => {
+  const params: Record<string, string> = {};
+  if (options?.category) {
+    params.category = options.category;
+  }
+  if (options?.exclude && options.exclude.length) {
+    params.exclude = options.exclude.join(",");
+  }
+
   const { data } = await apiClient.get<TitleBundle>("/titles/random/", {
-    params: category ? { category } : undefined,
+    params: Object.keys(params).length ? params : undefined,
   });
   return data;
 };

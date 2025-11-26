@@ -14,6 +14,7 @@ import { useAuth } from "./hooks/useAuth";
 import { useHistoryStore } from "./store/useHistoryStore";
 import type { NoSoLong, TitleBundle, TitleCategory } from "./types/api";
 import { getErrorMessage } from "./utils/errors";
+import { getDisplayName } from "./utils/user";
 
 const detectSwipeCapability = () => {
   if (typeof window === "undefined") {
@@ -50,6 +51,9 @@ function App() {
   const [editingQuote, setEditingQuote] = useState<NoSoLong | null>(null);
   const swipeStartX = useRef<number | null>(null);
   const [isSwipeCapable, setSwipeCapable] = useState<boolean>(() => detectSwipeCapability());
+  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [transitionDirection, setTransitionDirection] = useState<"forward" | "backward">("forward");
+  const [isTitleAnimating, setTitleAnimating] = useState(false);
 
   const normalizeBundle = useCallback((data: TitleBundle) => {
     const sortedOthers = [...data.other_nosolongs].sort((a, b) => {
@@ -126,6 +130,11 @@ function App() {
     return true;
   }, [user]);
 
+  const handleCategoryChange = useCallback((value: TitleCategory | "") => {
+    setCategory(value);
+    setMobileMenuOpen(false);
+  }, []);
+
   const openCreateRecap = useCallback(() => {
     if (!requireAuth()) return;
     setEditingQuote(null);
@@ -163,7 +172,12 @@ function App() {
     async (shouldReset = false) => {
       setLoading(true);
       try {
-        const data = await fetchRandomTitle(category || undefined);
+        setTransitionDirection("forward");
+        const recentHistory = useHistoryStore.getState().items.slice(-20);
+        const data = await fetchRandomTitle({
+          category: category || undefined,
+          exclude: recentHistory.length ? recentHistory : undefined,
+        });
         const normalized = normalizeBundle(data);
         setBundle(normalized);
         syncVotesFromBundle(normalized);
@@ -186,7 +200,28 @@ function App() {
     loadRandom(true);
   }, [loadRandom]);
 
+  useEffect(() => {
+    if (!bundle?.title.id) return;
+    setTitleAnimating(true);
+    const timer = window.setTimeout(() => {
+      setTitleAnimating(false);
+    }, 650);
+    return () => window.clearTimeout(timer);
+  }, [bundle?.title.id]);
+
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      const original = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = original;
+      };
+    }
+    return undefined;
+  }, [isMobileMenuOpen]);
+
   const handleNext = async () => {
+    setTransitionDirection("forward");
     const forwardId = canGoForward ? historyItems[historyIndex + 1] : null;
     if (forwardId) {
       const success = await loadTitleSummary(forwardId, true);
@@ -199,6 +234,7 @@ function App() {
   };
 
   const handleBack = async () => {
+    setTransitionDirection("backward");
     if (!canGoBack) return;
     const previousId = historyItems[historyIndex - 1];
     if (!previousId) return;
@@ -296,15 +332,28 @@ function App() {
     endSwipe(event.clientX);
   };
 
-  const showChevrons = !isSwipeCapable;
-  const stageClassName = showChevrons ? "title-viewer-stage title-viewer-stage-chevrons" : "title-viewer-stage";
+  const showNavigation = !isSwipeCapable;
+  const baseStageClass = "title-viewer-stage";
+  const stageAnimationClass = isTitleAnimating
+    ? transitionDirection === "backward"
+      ? "title-slide-backward"
+      : "title-slide-forward"
+    : "";
+  const stageClassName = [baseStageClass, stageAnimationClass].filter(Boolean).join(" ");
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+  const mobileAccountName = user ? getDisplayName(user) : "";
+  // const mobileAccountInitials = mobileAccountName
+  //   .split(" ")
+  //   .map((part) => part[0]?.toUpperCase())
+  //   .join("")
+  //   .slice(0, 2);
 
   return (
     <div className="app-shell">
       <header className="app-header">
         <div>
           <h1>Not So Long</h1>
-          <p>Recaps that are not so long.</p>
+          <p className="tagline">Find the recap which is as short as possible, but not shorter!</p>
         </div>
         <div className="auth-actions">
           {user ? (
@@ -319,12 +368,100 @@ function App() {
             </button>
           )}
         </div>
+        <button
+          type="button"
+          className="mobile-menu-button"
+          aria-label="Open menu"
+          aria-expanded={isMobileMenuOpen}
+          onClick={() => setMobileMenuOpen(true)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
       </header>
+      <div
+        className={isMobileMenuOpen ? "mobile-menu-overlay mobile-menu-open" : "mobile-menu-overlay"}
+        aria-hidden={!isMobileMenuOpen}
+        onClick={closeMobileMenu}
+      >
+        <div className="mobile-menu-panel" onClick={(event) => event.stopPropagation()}>
+          <div className="mobile-menu-panel-header">
+            
+            <button type="button" className="icon-button" aria-label="Close menu" onClick={closeMobileMenu}>
+              ×
+            </button>
+          </div>
+          <div className="mobile-menu-section">
+            <p className="mobile-menu-subheading">{mobileAccountName}</p>
+            {user ? (
+              <div className="mobile-account-summary">
+                <div className="mobile-account-actions">
+                  <button
+                    className="primary"
+                    onClick={() => {
+                      setAccountOpen(true);
+                      closeMobileMenu();
+                    }}
+                  >
+                    Account settings
+                  </button>
+                  <button
+                    className="ghost-button"
+                    onClick={() => {
+                      logout();
+                      closeMobileMenu();
+                    }}
+                  >
+                    Log out
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                className="primary"
+                onClick={() => {
+                  setAuthOpen(true);
+                  closeMobileMenu();
+                }}
+              >
+                Log in
+              </button>
+            )}
+          </div>
+          { user ? 
+          <div className="mobile-menu-section">
+            <p className="mobile-menu-subheading">Titles</p>
+            <button
+              className="primary button-medium"
+              onClick={() => {
+                handleAddTitleRequest();
+                closeMobileMenu();
+              }}
+            >
+              Add a Title
+            </button>
+          </div>
+: null }
+          <div className="mobile-menu-section">
+            <p className="mobile-menu-subheading">Filters</p>
+            <CategoryFilter variant="menu" value={category} onChange={handleCategoryChange} />
+          </div>
+        </div>
+            
+      </div>
 
-      <CategoryFilter
-        value={category}
-        onChange={(value) => setCategory(value)}
-      />
+      <div className="category-filter-desktop">
+        <div className="filter-bar">
+          <CategoryFilter
+            value={category}
+            onChange={handleCategoryChange}
+          />
+          <button className="primary button-medium add-title-button" onClick={handleAddTitleRequest}>
+            Add a Title
+          </button>
+        </div>
+      </div>
 
       {error && <div className="error-banner">{error}</div>}
 
@@ -335,20 +472,6 @@ function App() {
         onPointerLeave={cancelSwipe}
         onPointerCancel={cancelSwipe}
       >
-        {showChevrons && (
-          <div className="chevron-wrapper">
-            <button
-              type="button"
-              className="edge-chevron edge-chevron-prev"
-              onClick={handleBack}
-              disabled={!canGoBack || loading}
-              aria-label="Show previous title"
-            >
-              ←
-            </button>
-          </div>
-        )}
-
         <div className="title-viewer-shell">
           <TitleViewer
             bundle={bundle}
@@ -357,28 +480,17 @@ function App() {
             voteDisabledFor={voteTarget}
             userVotes={userVotes}
             onAddNoSoLong={openCreateRecap}
-            onAddTitle={handleAddTitleRequest}
             currentUserEmail={user?.email ?? null}
             onEditNoSoLong={handleEditNoSoLong}
             onDeleteNoSoLong={(quote) => {
               void handleDeleteNoSoLong(quote);
             }}
+            showNavigation={showNavigation}
+            canGoBack={canGoBack}
+            onBack={handleBack}
+            onNext={handleNext}
           />
         </div>
-
-        {showChevrons && (
-          <div className="chevron-wrapper">
-            <button
-              type="button"
-              className="edge-chevron edge-chevron-next"
-              onClick={handleNext}
-              disabled={loading}
-              aria-label="Show next title"
-            >
-              →
-            </button>
-          </div>
-        )}
       </div>
 
       <AddNoSoLongDialog
