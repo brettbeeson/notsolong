@@ -64,11 +64,16 @@ const TitleViewer = ({
         <div className="title-header-actions">
           <div className="cta-group">
             <button className="secondary button-medium" onClick={onAddTitle}>
-              Add Title
+            +&nbsp;Title
             </button>
+            
+            {!userQuote && (
+            
+            
             <button className="primary button-medium" onClick={handlePrimaryCta}>
-              {userQuote ? "Edit Recap" : "Add Recap"}
+              +&nbsp;Recap
             </button>
+            )}
             
           </div>
           
@@ -87,7 +92,7 @@ const TitleViewer = ({
             onDelete={onDeleteNoSoLong}
           />
         ) : (
-          <div className="panel empty-state">
+          <div className="empty-state">
             <p>No recaps yet. Add yours!</p>
           </div>
         )}
