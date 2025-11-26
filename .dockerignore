@@ -1,0 +1,14 @@
+# Global ignores for container builds
+.venv
+.vscode
+*.pyc
+__pycache__/
+frontend/node_modules
+frontend/.cache
+backend/.venv
+backend/.pytest_cache
+backend/notsolong.sqlite3
+backend/staticfiles
+backend/.env*
+.env*
+.git

@@ -1,0 +1,34 @@
+services:
+  db:
+    image: docker.io/library/postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-notsolong}
+      POSTGRES_USER: ${POSTGRES_USER:-notsolong}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-notsolong}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      # Persist DB data in ./pgdata on the host for easy inspection/backups
+      - ./pgdata:/var/lib/postgresql/data/pgdata
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: backend/Containerfile
+    restart: unless-stopped
+    env_file:
+      - backend/.env.podman
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      # host:container
+      # sync with .env.podman, noting this is loaded AFTER podman-compose.yml, so can't use ${} here
+      - 1111:8000
+
+volumes: {}

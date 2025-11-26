@@ -1,0 +1,17 @@
+[Unit]
+Description=NotSoLong Podman Compose Stack
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/bbeeson/notsolong
+Environment=PODMAN_SYSTEMD_UNIT=%n
+ExecStart=/usr/bin/podman compose -f podman-compose.yml up -d --remove-orphans
+ExecStop=/usr/bin/podman compose -f podman-compose.yml down
+TimeoutStartSec=0
+TimeoutStopSec=120
+
+[Install]
+WantedBy=default.target
