@@ -40,10 +40,23 @@ class TitleViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewsets.
 
     @action(detail=False, methods=["get"], url_path="random", permission_classes=[AllowAny])
     def random(self, request):
-        """Return a random title bundle, optionally filtered by category."""
+        """Return a random title bundle, optionally filtered by category and excluding given IDs."""
 
         category = request.query_params.get("category")
+        exclude = request.query_params.getlist("exclude")
+        # If exclude is a single comma-separated string, split it
+        if len(exclude) == 1 and "," in exclude[0]:
+            exclude = exclude[0].split(",")
+        # Convert to integers, ignore invalids
+        exclude_ids = []
+        for val in exclude:
+            try:
+                exclude_ids.append(int(val))
+            except (TypeError, ValueError):
+                continue
         queryset = self._filter_by_category(self.get_queryset(), category)
+        if exclude_ids:
+            queryset = queryset.exclude(pk__in=exclude_ids)
         title = queryset.order_by("?").first()
         if not title:
             raise NotFound("No titles available for the requested filter.")

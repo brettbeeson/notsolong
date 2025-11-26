@@ -29,10 +29,21 @@ class RegisterView(APIView):
         )
 
 
+
 class MeView(APIView):
-    """Return the authenticated user's profile."""
+    """Return or update the authenticated user's profile."""
 
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+
+    def patch(self, request):
+        # Only allow updating display_name
+        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        # Prevent email changes
+        if "email" in serializer.validated_data:
+            return Response({"detail": "Email cannot be changed."}, status=400)
+        serializer.save()
+        return Response(serializer.data)

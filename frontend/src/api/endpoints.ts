@@ -99,6 +99,6 @@ export const fetchCurrentUser = async () => {
 export const updateCurrentUser = async (
   payload: Partial<Pick<User, "display_name" | "email">>
 ) => {
-  const { data } = await apiClient.patch<User>("/auth/me/", payload);
+  const { data } = await apiClient.put<User>("/auth/me/", payload);
   return data;
 };
