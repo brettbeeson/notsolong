@@ -12,9 +12,13 @@ import TitleViewer from "./components/TitleViewer";
 import UserMenu from "./components/UserMenu";
 import { useAuth } from "./hooks/useAuth";
 import { useHistoryStore } from "./store/useHistoryStore";
-import type { NoSoLong, TitleBundle, TitleCategory } from "./types/api";
+import type { NoSoLong, Title, TitleBundle, TitleCategory } from "./types/api";
 import { getErrorMessage } from "./utils/errors";
 import { getDisplayName } from "./utils/user";
+
+const hasValidTitle = (bundle?: TitleBundle | null): bundle is TitleBundle & { title: Title } => {
+  return typeof bundle?.title?.id === "number";
+};
 
 const detectSwipeCapability = () => {
   if (typeof window === "undefined") {
@@ -56,7 +60,8 @@ function App() {
   const [isTitleAnimating, setTitleAnimating] = useState(false);
 
   const normalizeBundle = useCallback((data: TitleBundle) => {
-    const sortedOthers = [...data.other_nosolongs].sort((a, b) => {
+    const otherRecaps = Array.isArray(data.other_nosolongs) ? data.other_nosolongs : [];
+    const sortedOthers = [...otherRecaps].sort((a, b) => {
       const scoreDelta = (b.score ?? 0) - (a.score ?? 0);
       if (scoreDelta !== 0) {
         return scoreDelta;
@@ -154,6 +159,11 @@ function App() {
     try {
       const data = await fetchTitleSummary(id);
       const normalized = normalizeBundle(data);
+      if (!hasValidTitle(normalized)) {
+        setBundle(null);
+        setError("That title is no longer available.");
+        return false;
+      }
       setBundle(normalized);
       syncVotesFromBundle(normalized);
       setError(null);
@@ -179,6 +189,15 @@ function App() {
           exclude: recentHistory.length ? recentHistory : undefined,
         });
         const normalized = normalizeBundle(data);
+        if (!hasValidTitle(normalized)) {
+          setBundle(null);
+          syncVotesFromBundle(normalized);
+          setError(null);
+          if (shouldReset) {
+            resetHistory();
+          }
+          return;
+        }
         setBundle(normalized);
         syncVotesFromBundle(normalized);
         setError(null);
@@ -245,7 +264,7 @@ function App() {
   };
 
   const handleVote = async (quoteId: number, value: -1 | 0 | 1) => {
-    if (!bundle || !requireAuth()) return;
+    if (!bundle?.title?.id || !requireAuth()) return;
     setVoteTarget(quoteId);
     try {
       await voteNoSoLong(quoteId, value);
@@ -259,7 +278,7 @@ function App() {
   };
 
   const refreshActiveTitle = useCallback(async () => {
-    if (!bundle) return;
+    if (!bundle?.title?.id) return;
     await loadTitleSummary(bundle.title.id, true);
   }, [bundle, loadTitleSummary]);
 
@@ -361,6 +380,7 @@ function App() {
               user={user}
               onAccount={() => setAccountOpen(true)}
               onLogout={logout}
+              onAddTitle={handleAddTitleRequest}
             />
           ) : (
             <button className="secondary" onClick={() => setAuthOpen(true)}>
@@ -457,9 +477,9 @@ function App() {
             value={category}
             onChange={handleCategoryChange}
           />
-          <button className="primary button-medium add-title-button" onClick={handleAddTitleRequest}>
+          {/* <button className="primary button-medium add-title-button" onClick={handleAddTitleRequest}>
             Add a Title
-          </button>
+          </button> */}
         </div>
       </div>
 

@@ -54,8 +54,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [hydrate]);
 
   const login = useCallback(
-    async (payload: { email: string; password: string }) => {
-      const authTokens = await loginRequest(payload);
+    async (payload: { email: string; password: string; turnstileToken?: string }) => {
+      const authTokens = await loginRequest({
+        email: payload.email,
+        password: payload.password,
+        turnstile_token: payload.turnstileToken,
+      });
       persistTokens(authTokens);
       const profile = await fetchCurrentUser();
       setUser(profile);
@@ -64,8 +68,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 
   const register = useCallback(
-    async (payload: { email: string; password: string; display_name?: string }) => {
-      const response: RegisterResponse = await registerRequest(payload);
+    async (payload: {
+      email: string;
+      password: string;
+      display_name?: string;
+      turnstileToken?: string;
+    }) => {
+      const response: RegisterResponse = await registerRequest({
+        email: payload.email,
+        password: payload.password,
+        display_name: payload.display_name,
+        turnstile_token: payload.turnstileToken,
+      });
       persistTokens(response.tokens);
       setUser(response.user);
     },

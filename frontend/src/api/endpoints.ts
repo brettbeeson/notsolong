@@ -66,8 +66,22 @@ export const deleteNoSoLong = async (id: number) => {
   await apiClient.delete(`/nosolongs/${id}/`);
 };
 
-export const login = async (payload: { email: string; password: string }) => {
-  const { data } = await apiClient.post<Tokens>("/auth/token/", payload);
+type LoginPayload = {
+  email: string;
+  password: string;
+  turnstile_token?: string;
+};
+
+export const login = async ({
+  email,
+  password,
+  turnstile_token,
+}: LoginPayload) => {
+  const body: LoginPayload = { email, password };
+  if (turnstile_token) {
+    body.turnstile_token = turnstile_token;
+  }
+  const { data } = await apiClient.post<Tokens>("/auth/token/", body);
   return data;
 };
 
@@ -79,14 +93,29 @@ export const refreshToken = async (refresh: string) => {
   return data;
 };
 
-export const register = async (payload: {
+type RegisterPayload = {
   email: string;
   password: string;
   display_name?: string;
-}) => {
+  turnstile_token?: string;
+};
+
+export const register = async ({
+  email,
+  password,
+  display_name,
+  turnstile_token,
+}: RegisterPayload) => {
+  const body: RegisterPayload = { email, password };
+  if (display_name) {
+    body.display_name = display_name;
+  }
+  if (turnstile_token) {
+    body.turnstile_token = turnstile_token;
+  }
   const { data } = await apiClient.post<RegisterResponse>(
     "/auth/register/",
-    payload
+    body
   );
   return data;
 };
@@ -99,6 +128,6 @@ export const fetchCurrentUser = async () => {
 export const updateCurrentUser = async (
   payload: Partial<Pick<User, "display_name" | "email">>
 ) => {
-  const { data } = await apiClient.put<User>("/auth/me/", payload);
+  const { data } = await apiClient.patch<User>("/auth/me/", payload);
   return data;
 };

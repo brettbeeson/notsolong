@@ -7,9 +7,10 @@ interface UserMenuProps {
   user: User;
   onAccount: () => void;
   onLogout: () => void;
+  onAddTitle: () => void;
 }
 
-const UserMenu = ({ user, onAccount, onLogout }: UserMenuProps) => {
+const UserMenu = ({ user, onAccount, onLogout, onAddTitle }: UserMenuProps) => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -35,44 +36,62 @@ const UserMenu = ({ user, onAccount, onLogout }: UserMenuProps) => {
     };
   }, [open]);
 
-  const initials = getDisplayName(user)
-    .split(" ")
-    .map((part) => part[0]?.toUpperCase())
-    .join("")
-    .slice(0, 2);
-
   return (
     <div className="user-menu" ref={menuRef}>
       <button
+        type="button"
         className="user-menu-button"
         onClick={() => setOpen((prev) => !prev)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Account menu"
+        aria-label="Open menu"
       >
-        {initials || "Me"}
+        <span />
+        <span />
+        <span />
       </button>
       {open && (
         <div className="user-menu-popover" role="menu">
-          <p className="user-menu-name">{getDisplayName(user)}</p>
-          <button
-            className="primary user-menu-item"
-            onClick={() => {
-              setOpen(false);
-              onAccount();
-            }}
-          >
-            Account
-          </button>
-          <button
-            className="primary user-menu-item"
-            onClick={() => {
-              setOpen(false);
-              onLogout();
-            }}
-          >
-            Log out
-          </button>
+          <div className="user-menu-section">
+            <p className="user-menu-subheading">Account</p>
+            <p className="user-menu-name">{getDisplayName(user)}</p>
+            {user.email && <p className="user-menu-email">{user.email}</p>}
+            <div className="user-menu-actions">
+              <button
+                type="button"
+                className="primary button-medium"
+                onClick={() => {
+                  setOpen(false);
+                  onAccount();
+                }}
+              >
+                Account settings
+              </button>
+              <button
+                type="button"
+                className="ghost-button button-medium"
+                onClick={() => {
+                  setOpen(false);
+                  onLogout();
+                }}
+              >
+                Log out
+              </button>
+            </div>
+          </div>
+          <div className="user-menu-section">
+            <p className="user-menu-subheading">Titles</p>
+            <button
+              type="button"
+              className="primary button-medium"
+              onClick={() => {
+                setOpen(false);
+                onAddTitle();
+              }}
+            >
+              Add a Title
+            </button>
+          </div>
         </div>
       )}
     </div>

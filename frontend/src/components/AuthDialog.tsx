@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "../hooks/useAuth";
 import { getErrorMessage } from "../utils/errors";
 import { Modal } from "./Modal";
+import TurnstileWidget, { type TurnstileHandle } from "./TurnstileWidget";
 
 interface AuthDialogProps {
   open: boolean;
@@ -14,14 +15,39 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
   const [fields, setFields] = useState({ email: "", password: "", display_name: "" });
   const [error, setError] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<"login" | "register" | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileHandle | null>(null);
+  const turnstileEnabled = Boolean(import.meta.env.VITE_TURNSTILE_SITE_KEY);
+  const turnstileKeyMissing = !turnstileEnabled;
 
   useEffect(() => {
     if (!open) {
       setError(null);
       setFields({ email: "", password: "", display_name: "" });
       setLoadingAction(null);
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
     }
   }, [open]);
+
+  const ensureTurnstile = () => {
+    if (!turnstileEnabled) {
+      return true;
+    }
+    if (!turnstileToken) {
+      setError("Please complete the verification challenge.");
+      return false;
+    }
+    return true;
+  };
+
+  const resetTurnstile = () => {
+    if (!turnstileEnabled) {
+      return;
+    }
+    setTurnstileToken(null);
+    turnstileRef.current?.reset();
+  };
 
   const handleLogin = async () => {
     setError(null);
@@ -30,14 +56,22 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
       setError("Enter both your email and password.");
       return;
     }
+    if (!ensureTurnstile()) {
+      return;
+    }
     setLoadingAction("login");
     try {
-      await login({ email, password: fields.password });
+      await login({
+        email,
+        password: fields.password,
+        turnstileToken: turnstileEnabled ? turnstileToken ?? undefined : undefined,
+      });
       onClose();
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
       setLoadingAction(null);
+      resetTurnstile();
     }
   };
 
@@ -48,18 +82,23 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
       setError("Email and password are required.");
       return;
     }
+    if (!ensureTurnstile()) {
+      return;
+    }
     setLoadingAction("register");
     try {
       await register({
         email,
         password: fields.password,
         display_name: fields.display_name || undefined,
+        turnstileToken: turnstileEnabled ? turnstileToken ?? undefined : undefined,
       });
       onClose();
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
       setLoadingAction(null);
+      resetTurnstile();
     }
   };
 
@@ -92,13 +131,29 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
             placeholder="Optional (used when registering)"
           />
         </label>
+        {turnstileEnabled && (
+          <div className="turnstile-wrapper">
+            <TurnstileWidget
+              ref={turnstileRef}
+              onTokenChange={setTurnstileToken}
+              action="auth-dialog"
+            />
+          </div>
+        )}
+        {turnstileKeyMissing && (
+          <p className="turnstile-error">
+            Account creation is temporarily disabled because the Turnstile key is missing.
+          </p>
+        )}
         {error && <p className="error">{error}</p>}
         <div className="auth-dialog-actions">
           <button
             type="button"
             className="primary"
             onClick={handleLogin}
-            disabled={loadingAction === "login"}
+            disabled={
+              loadingAction === "login" || (turnstileEnabled && !turnstileToken)
+            }
           >
             {loadingAction === "login" ? "Logging in..." : "Log in"}
           </button>
@@ -106,7 +161,11 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
             type="button"
             className="secondary"
             onClick={handleRegister}
-            disabled={loadingAction === "register"}
+            disabled={
+              loadingAction === "register" ||
+              (turnstileEnabled && !turnstileToken) ||
+              turnstileKeyMissing
+            }
           >
             {loadingAction === "register" ? "Registering..." : "Register"}
           </button>
