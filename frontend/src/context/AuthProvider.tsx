@@ -71,13 +71,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     async (payload: {
       email: string;
       password: string;
-      display_name?: string;
       turnstileToken?: string;
     }) => {
       const response: RegisterResponse = await registerRequest({
         email: payload.email,
         password: payload.password,
-        display_name: payload.display_name,
         turnstile_token: payload.turnstileToken,
       });
       persistTokens(response.tokens);

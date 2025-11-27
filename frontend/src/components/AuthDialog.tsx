@@ -12,7 +12,7 @@ interface AuthDialogProps {
 
 const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
   const { login, register } = useAuth();
-  const [fields, setFields] = useState({ email: "", password: "", display_name: "" });
+  const [fields, setFields] = useState({ email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<"login" | "register" | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -23,7 +23,7 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
   useEffect(() => {
     if (!open) {
       setError(null);
-      setFields({ email: "", password: "", display_name: "" });
+      setFields({ email: "", password: "" });
       setLoadingAction(null);
       setTurnstileToken(null);
       turnstileRef.current?.reset();
@@ -68,6 +68,7 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
       });
       onClose();
     } catch (err) {
+      
       setError(getErrorMessage(err));
     } finally {
       setLoadingAction(null);
@@ -90,7 +91,6 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
       await register({
         email,
         password: fields.password,
-        display_name: fields.display_name || undefined,
         turnstileToken: turnstileEnabled ? turnstileToken ?? undefined : undefined,
       });
       onClose();
@@ -104,7 +104,13 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
 
   return (
     <Modal open={open} title="Log in or Register" onClose={onClose}>
-      <form className="form" onSubmit={(event) => event.preventDefault()}>
+      <form
+        className="form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void handleLogin();
+        }}
+      >
         <label>
           Email
           <input
@@ -123,23 +129,6 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
             required
           />
         </label>
-        <label>
-          Display name
-          <input
-            value={fields.display_name}
-            onChange={(e) => setFields((prev) => ({ ...prev, display_name: e.target.value }))}
-            placeholder="Optional (used when registering)"
-          />
-        </label>
-        {turnstileEnabled && (
-          <div className="turnstile-wrapper">
-            <TurnstileWidget
-              ref={turnstileRef}
-              onTokenChange={setTurnstileToken}
-              action="auth-dialog"
-            />
-          </div>
-        )}
         {turnstileKeyMissing && (
           <p className="turnstile-error">
             Account creation is temporarily disabled because the Turnstile key is missing.
@@ -148,7 +137,7 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
         {error && <p className="error">{error}</p>}
         <div className="auth-dialog-actions">
           <button
-            type="button"
+            type="submit"
             className="primary"
             onClick={handleLogin}
             disabled={
@@ -159,7 +148,7 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
           </button>
           <button
             type="button"
-            className="secondary"
+            className="primary"
             onClick={handleRegister}
             disabled={
               loadingAction === "register" ||
@@ -169,6 +158,16 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
           >
             {loadingAction === "register" ? "Registering..." : "Register"}
           </button>
+          {turnstileEnabled && (
+          <div className="turnstile-wrapper">
+            <TurnstileWidget
+              ref={turnstileRef}
+              onTokenChange={setTurnstileToken}
+              action="auth-dialog"
+            />
+          </div>
+        )}
+        
         </div>
       </form>
     </Modal>

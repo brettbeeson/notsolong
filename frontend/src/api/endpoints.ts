@@ -116,20 +116,15 @@ export const refreshToken = async (refresh: string) => {
 type RegisterPayload = {
   email: string;
   password: string;
-  display_name?: string;
   turnstile_token?: string;
 };
 
 export const register = async ({
   email,
   password,
-  display_name,
   turnstile_token,
 }: RegisterPayload) => {
   const body: RegisterPayload = { email, password };
-  if (display_name) {
-    body.display_name = display_name;
-  }
   if (turnstile_token) {
     body.turnstile_token = turnstile_token;
   }

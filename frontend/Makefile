@@ -14,7 +14,7 @@ install:
 	npm install
 
 run:
-	npm run dev
+	npm run dev -- --host 0.0.0.0
 
 build:
 	npm run build

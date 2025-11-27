@@ -12,7 +12,6 @@ export interface AuthContextValue {
   register: (payload: {
     email: string;
     password: string;
-    display_name?: string;
     turnstileToken?: string;
   }) => Promise<void>;
   logout: () => void;

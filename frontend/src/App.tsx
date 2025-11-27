@@ -358,7 +358,8 @@ function App() {
     endSwipe(event.clientX);
   };
 
-  const showNavigation = !isSwipeCapable;
+  // const showNavigation=!isSwipeCapable;
+  const showNavigation = true; // even for swipe phone, as can be hard to swipe 
   const baseStageClass = "title-viewer-stage";
   const stageAnimationClass = isTitleAnimating
     ? transitionDirection === "backward"

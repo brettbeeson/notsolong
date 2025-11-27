@@ -326,6 +326,13 @@ select {
   min-width: 0;
 }
 
+.title-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+}
+
 .title-viewer .category {
   text-transform: uppercase;
   letter-spacing: 0.2em;
@@ -343,12 +350,6 @@ select {
 .title-viewer .author {
   margin: 0.25rem 0 0;
   color: var(--color-muted);
-}
-
-.title-header-actions {
-  display: flex;
-  align-items: flex-start;
-  margin-left: auto;
 }
 
 .title-nav-controls {
@@ -652,6 +653,7 @@ select {
   border-radius: 1.25rem;
   padding: 1.75rem;
   box-shadow: 0 30px 60px var(--color-shadow);
+  overflow-x: auto;
 }
 
 .account-page-header {
@@ -789,14 +791,18 @@ select {
   resize: vertical;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 500px) {
   .title-header {
     flex-direction: column;
   }
 
-  .title-header-actions {
+  .title-heading {
     width: 100%;
-    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .title-heading .title-nav-controls {
+    justify-content: flex-start;
   }
 
   .cta-group {

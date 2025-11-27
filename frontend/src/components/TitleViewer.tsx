@@ -69,33 +69,33 @@ const TitleViewer = ({
       <header className="title-header">
         <div className="title-header-copy">
           <p className="category">{title.category.toUpperCase()}</p>
-          <h1>{title.name}</h1>
+          <div className="title-heading">
+            <h1>{title.name}</h1>
+            {showNavigation && (
+              <div className="title-nav-controls" aria-label="Title navigation controls">
+                <button
+                  type="button"
+                  className="title-nav-button"
+                  onClick={onBack}
+                  disabled={!canGoBack || loading}
+                  aria-label="Show previous title"
+                >
+                  ←
+                </button>
+                <button
+                  type="button"
+                  className="title-nav-button"
+                  onClick={onNext}
+                  disabled={loading || (!canGoForward && isForwardExhausted)}
+                  aria-label="Show next title"
+                >
+                  →
+                </button>
+              </div>
+            )}
+          </div>
           {authorName && <p className="author">by {authorName}</p>}
         </div>
-        {showNavigation && (
-          <div className="title-header-actions">
-            <div className="title-nav-controls">
-              <button
-                type="button"
-                className="title-nav-button"
-                onClick={onBack}
-                disabled={!canGoBack || loading}
-                aria-label="Show previous title"
-              >
-                ←
-              </button>
-              <button
-                type="button"
-                className="title-nav-button"
-                onClick={onNext}
-                disabled={loading || (!canGoForward && isForwardExhausted)}
-                aria-label="Show next title"
-              >
-                →
-              </button>
-            </div>
-          </div>
-        )}
       </header>
       <div className="title-recaps">
         {top_nosolong ? (
@@ -121,6 +121,11 @@ const TitleViewer = ({
         ) : (
           <div className="empty-state">
             <p>No recaps yet. Add yours!</p>
+            {canAddRecap && (
+              <button className="primary" onClick={handlePrimaryCta}>
+                Add your recap
+              </button>
+            )}
           </div>
         )}
 
