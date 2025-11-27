@@ -13,7 +13,8 @@ COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 
 COPY frontend/ ./
-RUN npm run build
+# Use the podman-specific environment file .env.podman which has TURNSTILE keys etc.
+RUN npm run build -- --mode podman
 
 ###############################
 # Django + Gunicorn stage     #

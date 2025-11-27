@@ -40,4 +40,11 @@ podman-seed:
 	$(COMPOSE) exec web python manage.py createuser
 	$(COMPOSE) exec web python manage.py seed --force
 
+podman-systemd:
+	@echo Copying systemd service file to *user* config at ~/.config/systemd/user/notsolong.service
+	install -Dm644 systemd/notsolong.service $(HOME)/.config/systemd/user/notsolong.service
+	systemctl --user daemon-reload
+	@echo "To start the notsolong service, run:"	
+	@echo "  systemctl --user start notsolong.service"
+
 	
