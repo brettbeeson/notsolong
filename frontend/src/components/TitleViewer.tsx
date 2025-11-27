@@ -15,6 +15,8 @@ interface TitleViewerProps {
   onBack: () => void;
   onNext: () => void;
   canGoBack: boolean;
+  canGoForward: boolean;
+  isForwardExhausted: boolean;
 }
 
 const TitleViewer = ({
@@ -31,6 +33,8 @@ const TitleViewer = ({
   onBack,
   onNext,
   canGoBack,
+  canGoForward,
+  isForwardExhausted,
 }: TitleViewerProps) => {
   if (loading) {
     return <div className="panel">Loading a fresh Title...</div>;
@@ -84,7 +88,7 @@ const TitleViewer = ({
                 type="button"
                 className="title-nav-button"
                 onClick={onNext}
-                disabled={loading}
+                disabled={loading || (!canGoForward && isForwardExhausted)}
                 aria-label="Show next title"
               >
                 →

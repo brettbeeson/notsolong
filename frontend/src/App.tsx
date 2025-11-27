@@ -2,7 +2,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 
 import "./App.css";
-import { deleteNoSoLong, fetchRandomTitle, fetchTitleSummary, voteNoSoLong } from "./api/endpoints";
+import {
+  deleteNoSoLong,
+  fetchRandomTitle,
+  fetchTitleSummary,
+  NoTitlesAvailableError,
+  voteNoSoLong,
+} from "./api/endpoints";
 import AddNoSoLongDialog from "./components/AddNoSoLongDialog";
 import AuthDialog from "./components/AuthDialog";
 import AccountPanel from "./components/AccountPanel";
@@ -12,13 +18,9 @@ import TitleViewer from "./components/TitleViewer";
 import UserMenu from "./components/UserMenu";
 import { useAuth } from "./hooks/useAuth";
 import { useHistoryStore } from "./store/useHistoryStore";
-import type { NoSoLong, Title, TitleBundle, TitleCategory } from "./types/api";
+import type { NoSoLong, TitleBundle, TitleCategory } from "./types/api";
 import { getErrorMessage } from "./utils/errors";
 import { getDisplayName } from "./utils/user";
-
-const hasValidTitle = (bundle?: TitleBundle | null): bundle is TitleBundle & { title: Title } => {
-  return typeof bundle?.title?.id === "number";
-};
 
 const detectSwipeCapability = () => {
   if (typeof window === "undefined") {
@@ -58,10 +60,10 @@ function App() {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState<"forward" | "backward">("forward");
   const [isTitleAnimating, setTitleAnimating] = useState(false);
+  const [isForwardExhausted, setForwardExhausted] = useState(false);
 
   const normalizeBundle = useCallback((data: TitleBundle) => {
-    const otherRecaps = Array.isArray(data.other_nosolongs) ? data.other_nosolongs : [];
-    const sortedOthers = [...otherRecaps].sort((a, b) => {
+    const sortedOthers = [...data.other_nosolongs].sort((a, b) => {
       const scoreDelta = (b.score ?? 0) - (a.score ?? 0);
       if (scoreDelta !== 0) {
         return scoreDelta;
@@ -138,6 +140,7 @@ function App() {
   const handleCategoryChange = useCallback((value: TitleCategory | "") => {
     setCategory(value);
     setMobileMenuOpen(false);
+    setForwardExhausted(false);
   }, []);
 
   const openCreateRecap = useCallback(() => {
@@ -159,11 +162,6 @@ function App() {
     try {
       const data = await fetchTitleSummary(id);
       const normalized = normalizeBundle(data);
-      if (!hasValidTitle(normalized)) {
-        setBundle(null);
-        setError("That title is no longer available.");
-        return false;
-      }
       setBundle(normalized);
       syncVotesFromBundle(normalized);
       setError(null);
@@ -188,26 +186,30 @@ function App() {
           category: category || undefined,
           exclude: recentHistory.length ? recentHistory : undefined,
         });
-        const normalized = normalizeBundle(data);
-        if (!hasValidTitle(normalized)) {
-          setBundle(null);
-          syncVotesFromBundle(normalized);
-          setError(null);
-          if (shouldReset) {
-            resetHistory();
-          }
-          return;
+        if (!data) {
+          setForwardExhausted(true);
+          return; // exhausted deque, no-op per requirements
         }
+        const normalized = normalizeBundle(data);
         setBundle(normalized);
         syncVotesFromBundle(normalized);
         setError(null);
+        setForwardExhausted(false);
         if (shouldReset) {
           resetHistory(normalized.title.id);
         } else {
           recordHistory(normalized.title.id);
         }
+        
       } catch (err) {
-        setError(getErrorMessage(err));
+        if (err instanceof NoTitlesAvailableError) {
+          setBundle(null);
+          setError("No titles available. Add a new title.");
+          resetHistory();
+          setForwardExhausted(true);
+        } else {
+          setError(getErrorMessage(err));
+        }
       } finally {
         setLoading(false);
       }
@@ -240,12 +242,16 @@ function App() {
   }, [isMobileMenuOpen]);
 
   const handleNext = async () => {
+    if (!canGoForward && isForwardExhausted) {
+      return;
+    }
     setTransitionDirection("forward");
     const forwardId = canGoForward ? historyItems[historyIndex + 1] : null;
     if (forwardId) {
       const success = await loadTitleSummary(forwardId, true);
       if (success) {
         setHistoryIndex(historyIndex + 1);
+        setForwardExhausted(false);
       }
       return;
     }
@@ -260,11 +266,12 @@ function App() {
     const success = await loadTitleSummary(previousId, true);
     if (success) {
       setHistoryIndex(historyIndex - 1);
+      setForwardExhausted(false);
     }
   };
 
   const handleVote = async (quoteId: number, value: -1 | 0 | 1) => {
-    if (!bundle?.title?.id || !requireAuth()) return;
+    if (!bundle || !requireAuth()) return;
     setVoteTarget(quoteId);
     try {
       await voteNoSoLong(quoteId, value);
@@ -278,7 +285,7 @@ function App() {
   };
 
   const refreshActiveTitle = useCallback(async () => {
-    if (!bundle?.title?.id) return;
+    if (!bundle) return;
     await loadTitleSummary(bundle.title.id, true);
   }, [bundle, loadTitleSummary]);
 
@@ -477,9 +484,7 @@ function App() {
             value={category}
             onChange={handleCategoryChange}
           />
-          {/* <button className="primary button-medium add-title-button" onClick={handleAddTitleRequest}>
-            Add a Title
-          </button> */}
+         
         </div>
       </div>
 
@@ -507,6 +512,8 @@ function App() {
             }}
             showNavigation={showNavigation}
             canGoBack={canGoBack}
+            canGoForward={canGoForward}
+            isForwardExhausted={isForwardExhausted}
             onBack={handleBack}
             onNext={handleNext}
           />

@@ -59,17 +59,11 @@ const NoSoLongCard = ({
     cardClassNames.push("quote-card-owned");
   }
 
-  const isTouch = typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
+  
 
   return (
     <article className={cardClassNames.join(" ")}>
-      {!isTouch && (
-        <span className="quote-chevron" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M7 9l4 4 4-4" stroke="#9aa0c2" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </span>
-      )}
+      
       <p className="quote-text">“{quote.text}”</p>
       <div className="quote-meta">
         <span>— {getDisplayName(quote.user)}</span>

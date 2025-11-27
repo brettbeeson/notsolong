@@ -1,4 +1,5 @@
 import { apiClient } from "./client";
+import { isAxiosError } from "axios";
 import type {
   NoSoLong,
   RegisterResponse,
@@ -9,10 +10,19 @@ import type {
   User,
 } from "../types/api";
 
+// Fetch a random title, optionally filtered by category and excluding certain IDs
+// If all titles are excluded, API returns 404 and we return null
+export class NoTitlesAvailableError extends Error {
+  constructor(message = "No titles available") {
+    super(message);
+    this.name = "NoTitlesAvailableError";
+  }
+}
+
 export const fetchRandomTitle = async (options?: {
   category?: TitleCategory;
   exclude?: number[];
-}) => {
+}): Promise<TitleBundle | null> => {
   const params: Record<string, string> = {};
   if (options?.category) {
     params.category = options.category;
@@ -21,10 +31,20 @@ export const fetchRandomTitle = async (options?: {
     params.exclude = options.exclude.join(",");
   }
 
-  const { data } = await apiClient.get<TitleBundle>("/titles/random/", {
-    params: Object.keys(params).length ? params : undefined,
-  });
-  return data;
+  try {
+    const { data } = await apiClient.get<TitleBundle>("/titles/random/", {
+      params: Object.keys(params).length ? params : undefined,
+    });
+    return data;
+  } catch (error: unknown) {
+    if (isAxiosError(error) && error.response?.status === 404) {
+      if (options?.exclude?.length) {
+        return null;
+      }
+      throw new NoTitlesAvailableError();
+    }
+    throw error; // re-throw other errors
+  }
 };
 
 export const fetchTitleSummary = async (id: number) => {

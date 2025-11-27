@@ -245,22 +245,34 @@ select {
 @keyframes title-slide-forward {
   0% {
     opacity: 0;
-    transform: translateX(36px);
+    transform: translateX(48px);
+    filter: blur(10px);
+  }
+  60% {
+    opacity: 1;
+    filter: blur(0);
   }
   100% {
     opacity: 1;
     transform: translateX(0);
+    filter: blur(0);
   }
 }
 
 @keyframes title-slide-backward {
   0% {
     opacity: 0;
-    transform: translateX(-36px);
+    transform: translateX(-48px);
+    filter: blur(10px);
+  }
+  60% {
+    opacity: 1;
+    filter: blur(0);
   }
   100% {
     opacity: 1;
     transform: translateX(0);
+    filter: blur(0);
   }
 }
 
@@ -281,11 +293,11 @@ select {
 }
 
 .title-viewer-stage.title-slide-forward .title-viewer-shell {
-  animation: title-slide-forward 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: title-slide-forward 0.85s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .title-viewer-stage.title-slide-backward .title-viewer-shell {
-  animation: title-slide-backward 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: title-slide-backward 0.85s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .panel {
@@ -336,6 +348,7 @@ select {
 .title-header-actions {
   display: flex;
   align-items: flex-start;
+  margin-left: auto;
 }
 
 .title-nav-controls {

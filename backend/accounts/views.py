@@ -3,8 +3,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .serializers import RegisterSerializer, UserSerializer
+from .turnstile import verify_turnstile_token
 
 
 class RegisterView(APIView):
@@ -13,6 +15,8 @@ class RegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        if not verify_turnstile_token(request.data.get("turnstile_token")):
+            return Response({"detail": "Turnstile validation failed."}, status=status.HTTP_400_BAD_REQUEST)
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -27,7 +31,6 @@ class RegisterView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
-
 
 
 class MeView(APIView):
@@ -47,3 +50,12 @@ class MeView(APIView):
             return Response({"detail": "Email cannot be changed."}, status=400)
         serializer.save()
         return Response(serializer.data)
+
+
+class TurnstileTokenObtainPairView(TokenObtainPairView):
+    """Issue JWT tokens only after passing Turnstile verification."""
+
+    def post(self, request, *args, **kwargs):
+        if not verify_turnstile_token(request.data.get("turnstile_token")):
+            return Response({"detail": "Turnstile validation failed."}, status=status.HTTP_400_BAD_REQUEST)
+        return super().post(request, *args, **kwargs)
