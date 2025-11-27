@@ -55,6 +55,7 @@ const TitleViewer = ({
     ? allQuotes.find((quote) => quote.user.email === currentUserEmail)
     : null;
   const canAddRecap = !userQuote;
+  const userOwnsTop = Boolean(top_nosolong && userQuote && userQuote.id === top_nosolong.id);
 
   const handlePrimaryCta = () => {
     if (userQuote) {
@@ -100,16 +101,19 @@ const TitleViewer = ({
       <div className="title-recaps">
         {top_nosolong ? (
           <>
-            <NoSoLongCard
-              quote={top_nosolong}
-              highlight
-              owned={userQuote?.id === top_nosolong.id}
-              onVote={onVote}
-              disabled={voteDisabledFor === top_nosolong.id}
-              userVoteOverride={userVotes[top_nosolong.id] ?? null}
-              onEdit={onEditNoSoLong}
-              onDelete={onDeleteNoSoLong}
-            />
+            <div className="top-recap-stack">
+              {userOwnsTop && <p className="top-recap-toast">Your recap is the best!</p>}
+              <NoSoLongCard
+                quote={top_nosolong}
+                highlight
+                owned={userQuote?.id === top_nosolong.id}
+                onVote={onVote}
+                disabled={voteDisabledFor === top_nosolong.id}
+                userVoteOverride={userVotes[top_nosolong.id] ?? null}
+                onEdit={onEditNoSoLong}
+                onDelete={onDeleteNoSoLong}
+              />
+            </div>
             {canAddRecap && (
               <div className="add-recap-inline">
                 <button className="primary" onClick={handlePrimaryCta}>

@@ -18,6 +18,7 @@ type TurnstileRenderOptions = {
   "error-callback"?: () => void;
   action?: string;
   theme?: "light" | "dark" | "auto";
+  size?: "normal" | "compact" | "invisible";
 };
 
 const TURNSTILE_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
@@ -96,6 +97,7 @@ const TurnstileWidget = forwardRef<TurnstileHandle, TurnstileWidgetProps>(
             "error-callback": () => onTokenChange(null),
             action,
             theme,
+            size: "compact",
           });
         } catch (error) {
           console.error("Turnstile failed to initialize", error);
