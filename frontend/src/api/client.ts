@@ -1,10 +1,13 @@
 import axios from "axios";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api";
+/*
+In dev, /api is proxied to the backend server by Vite dev server.
+In production, the frontend is served by the backend, so /api works there too.
 
+Could remove axios and just use fetch
+*/
 export const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: "/api",
 });
 
 export const setAuthToken = (token: string | null) => {

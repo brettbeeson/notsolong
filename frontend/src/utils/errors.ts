@@ -13,7 +13,18 @@ export const getErrorMessage = (
   fallback = "Something went wrong"
 ) => {
   if (axios.isAxiosError(error)) {
-    const data = error.response?.data;
+    const { response, config, code, message } = error;
+    const data = response?.data;
+    const urlInfo = config?.url ? ` (${config.url})` : "";
+
+    if (code === "ERR_NETWORK") {
+      return message || `Network error${urlInfo}`;
+    }
+
+    if (response?.status && response.statusText) {
+      return `${response.status} ${response.statusText}${urlInfo}`;
+    }
+
     if (typeof data === "string") {
       return data;
     }

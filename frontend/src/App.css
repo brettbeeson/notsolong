@@ -191,15 +191,6 @@ select {
 
 
 
-.modal-panel,
-.account-page-panel {
-  position: fixed;
-   background: var(--color-surface);
-  border-radius: 1.25rem;
-  padding: 1.75rem;
-  box-shadow: 0 30px 60px var(--color-shadow);
-  cursor: pointer;
-}
 
 .sheet-option-active {
   background: var(--color-primary);
@@ -610,6 +601,9 @@ select {
   gap: 1rem;
   min-width: 260px;
   z-index: 20;
+  max-height: min(80vh, 480px);
+  overflow-x: auto;
+  overflow-y: auto;
 }
 
 .user-menu-section {
@@ -654,22 +648,47 @@ select {
   position: fixed;
   inset: 0;
   background: var(--color-backdrop);
-  display: grid;
-  place-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
   padding: clamp(1rem, 4vw, 2rem);
+  overflow-x: auto;
   overflow-y: auto;
   z-index: 30;
 }
 
 .modal-panel,
 .account-page-panel {
-  width: min(520px, 100%);
+  width: min(520px, calc(100% - clamp(1rem, 4vw, 2rem)));
   background: var(--color-surface);
   border-radius: 1.25rem;
   padding: 1.75rem;
   box-shadow: 0 30px 60px var(--color-shadow);
   max-height: calc(100vh - clamp(2rem, 8vw, 4rem));
+  overflow-x: auto;
   overflow-y: auto;
+}
+
+.account-page-panel {
+  position: relative;
+}
+
+.account-close-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  border: none;
+  background: rgba(0, 0, 0, 0.05);
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  font-size: 1.25rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.account-close-button:hover {
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .account-page-header .icon-button {
@@ -693,6 +712,14 @@ select {
 .account-page-subtitle {
   margin: 0.25rem 0 0;
   color: var(--color-muted);
+}
+
+.account-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
 }
 
 .modal-header {

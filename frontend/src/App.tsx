@@ -16,11 +16,11 @@ import CategoryFilter from "./components/CategoryFilter";
 import NewTitleDialog from "./components/NewTitleDialog";
 import TitleViewer from "./components/TitleViewer";
 import UserMenu from "./components/UserMenu";
+import MobileMenu from "./components/MobileMenu";
 import { useAuth } from "./hooks/useAuth";
 import { useHistoryStore } from "./store/useHistoryStore";
 import type { NoSoLong, TitleBundle, TitleCategory } from "./types/api";
 import { getErrorMessage } from "./utils/errors";
-import { getDisplayName } from "./utils/user";
 
 const detectSwipeCapability = () => {
   if (typeof window === "undefined") {
@@ -368,13 +368,7 @@ function App() {
     : "";
   const stageClassName = [baseStageClass, stageAnimationClass].filter(Boolean).join(" ");
   const closeMobileMenu = () => setMobileMenuOpen(false);
-  const mobileAccountName = user ? getDisplayName(user) : "";
-  // const mobileAccountInitials = mobileAccountName
-  //   .split(" ")
-  //   .map((part) => part[0]?.toUpperCase())
-  //   .join("")
-  //   .slice(0, 2);
-
+  
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -408,76 +402,17 @@ function App() {
           <span />
         </button>
       </header>
-      <div
-        className={isMobileMenuOpen ? "mobile-menu-overlay mobile-menu-open" : "mobile-menu-overlay"}
-        aria-hidden={!isMobileMenuOpen}
-        onClick={closeMobileMenu}
-      >
-        <div className="mobile-menu-panel" onClick={(event) => event.stopPropagation()}>
-          <div className="mobile-menu-panel-header">
-            
-            <button type="button" className="icon-button" aria-label="Close menu" onClick={closeMobileMenu}>
-              ×
-            </button>
-          </div>
-          <div className="mobile-menu-section">
-            <p className="mobile-menu-subheading">{mobileAccountName}</p>
-            {user ? (
-              <div className="mobile-account-summary">
-                <div className="mobile-account-actions">
-                  <button
-                    className="primary"
-                    onClick={() => {
-                      setAccountOpen(true);
-                      closeMobileMenu();
-                    }}
-                  >
-                    Account settings
-                  </button>
-                  <button
-                    className="ghost-button"
-                    onClick={() => {
-                      logout();
-                      closeMobileMenu();
-                    }}
-                  >
-                    Log out
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                className="primary"
-                onClick={() => {
-                  setAuthOpen(true);
-                  closeMobileMenu();
-                }}
-              >
-                Log in
-              </button>
-            )}
-          </div>
-          { user ? 
-          <div className="mobile-menu-section">
-            <p className="mobile-menu-subheading">Titles</p>
-            <button
-              className="primary button-medium"
-              onClick={() => {
-                handleAddTitleRequest();
-                closeMobileMenu();
-              }}
-            >
-              Add a Title
-            </button>
-          </div>
-: null }
-          <div className="mobile-menu-section">
-            <p className="mobile-menu-subheading">Filters</p>
-            <CategoryFilter variant="menu" value={category} onChange={handleCategoryChange} />
-          </div>
-        </div>
-            
-      </div>
+      <MobileMenu
+        isOpen={isMobileMenuOpen}
+        user={user}
+        onClose={closeMobileMenu}
+        onOpenAccount={() => setAccountOpen(true)}
+        onLogout={logout}
+        onOpenAuth={() => setAuthOpen(true)}
+        onAddTitle={handleAddTitleRequest}
+        category={category}
+        onCategoryChange={handleCategoryChange}
+      />
 
       <div className="category-filter-desktop">
         <div className="filter-bar">

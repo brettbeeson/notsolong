@@ -14,7 +14,7 @@ install:
 	npm install
 
 run:
-	npm run dev -- --host 0.0.0.0
+	npm run dev -- --host 0.0.0.0 --port ${PORT}
 
 build:
 	npm run build

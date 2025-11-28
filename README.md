@@ -1,6 +1,6 @@
 # NotSoLong – Project Scope & Technical Specification
 
-*Last updated: {{today}}*
+** This file is maintained by AI tooling. AI editor: KEEP THIS NOTICE **
 
 ---
 
@@ -15,7 +15,7 @@ The main UX mechanic:
 * Displays:
 
   * The **top-ranked NoSoLong**
-  * **Three additional random NoSoLongs** for the same Title
+  * **Additional random NoSoLongs** for the same Title
 * Users can:
 
   * Vote
@@ -32,22 +32,19 @@ This document defines the entire architecture for backend (Django + DRF + JWT) a
 ### **Functional Requirements**
 
 * Users can:
-
   * Register / log in
   * Create NoSoLongs
   * Vote up/down on any NoSoLong (once per Title)
   * Add new Titles
 * Anyone (including anonymous) can:
-
   * View Titles
   * View the associated NoSoLongs
 * Main screen:
 
   * Shows **one Title at a time**
   * Shows:
-
     * Top NoSoLong (highest score)
-    * 3 random NoSoLongs from that Title
+    * Additional random NoSoLongs from that Title
   * Voting requires login
   * “Add mine” requires login
 * Category filter (book, movie, podcast, speech, other)
@@ -63,10 +60,8 @@ This document defines the entire architecture for backend (Django + DRF + JWT) a
 * PostgreSQL in production, SQLite in dev
 * UV, gunicorn + Nginx deployment
 * Use environment variables for secrets
-* Logger configured
 * Custom User required
 * Have a settings/ folder with dev, prod settings
-* Use Black format via charliemarsh formatter 
 * 
 
 ---
@@ -413,7 +408,7 @@ urlpatterns = [
 
 * Podman pod with Postgres 18 + Django/Gunicorn (bound to `localhost:1111`)
 * Whitenoise serves the Vite build + Django static assets (no separate Nginx)
-* All configuration via environment variables (`backend/.env.podman`)
+* All configuration lives in the repo-level `.env`
 * Configure CORS / CSRF + JWT security options for the exposed port
 
 ---
@@ -461,7 +456,8 @@ This spec defines all models, APIs, and UI flows needed to implement the full sy
   - `cd backend`
   - `uv pip install -e .[dev]`
 3. **Environment variables**
-  - Copy `.env.example` → `.env` and set `DJANGO_SECRET_KEY`, database URL, etc.
+  - Copy the repo-level `.env.example` → `.env`, set `DJANGO_SECRET_KEY`, database URL, etc., then run `direnv allow` (loads `.env` automatically in every subdirectory).
+  - Django settings also honor `ENV=<name>`; if set, they read `.env.<name>` first (falling back to `.env`).
 4. **Run services**
   - Apply migrations: `python manage.py migrate`
   - Load demo data (optional): `python manage.py seed --force`
@@ -479,7 +475,7 @@ This spec defines all models, APIs, and UI flows needed to implement the full sy
   - `cd frontend`
   - `npm install`
 3. **Environment variables**
-  - Copy `.env.example` → `.env` and set `VITE_API_BASE_URL` (defaults to `http://localhost:8000/api`).
+  - The frontend consumes the same root `.env` (via direnv), so once that file exists no extra `.env` files are needed inside `frontend/`.
 4. **Run & build**
   - Start dev server: `npm run dev` (requires backend running with CORS enabled).
   - Build for prod: `npm run build` (warns until Node is updated, but completes).
@@ -507,36 +503,39 @@ Backend and frontend communicate over the JSON API described above. JWT auth tok
 
 ---
 
-## **14. Podman Deployment (localhost:1111)**
+## **14. Podman Build & Deployment**
 
-These steps create a single pod that contains Postgres 18 and the Django/Gunicorn container. Whitenoise serves the pre-built React SPA, so no extra web tier is needed.
+Whitenoise continues to serve the compiled Vite app from within the Django container, so the only public port is the Gunicorn one (default `1111`). The Podman workflow now lives entirely in the `Makefile`.
 
-1. **Prep environment**
-  - Copy `backend/.env.podman.example` → `backend/.env.podman` and update secrets, allowed hosts, and superuser credentials.
-  - The SPA build expects `VITE_API_BASE_URL=/api`. The Containerfile sets this automatically, but keep that in mind if you build locally.
-2. **Build & start**
-  - `make podman-build` (builds the Node + Django multi-stage image, collects static files, and bakes in the SPA under `/static/`).
-  - `make podman-up` (creates the pod, starts Postgres 18 + Django on port `1111`).
-3. **Use the app**
-  - Visit `http://localhost:1111`. API lives at `http://localhost:1111/api/` and shares the same origin as the SPA.
-  - The Postgres data is stored in the named volume `notsolong-postgres-data`. Remove it to reset state: `podman volume rm notsolong-postgres-data`.
-4. **Admin tasks**
-  - Tail logs: `make podman-logs` (follows the `web` container).
-  - Run management commands: `podman compose -f podman-compose.yml exec web python manage.py <command>`.
-  - Stop everything: `make podman-down`.
+### Environment & image naming
 
-Because Whitenoise is bundled inside Django, static files and the SPA are delivered directly from Gunicorn. No Nginx is required, and the only exposed port is `1111`.
+- Export `ENV=<name>` (for example `ENV=prod`) before running any `make podman-*` target. Compose will read `.env.<ENV>` first and fall back to `.env` if that file is missing.
+- Populate `.env.<ENV>` with database credentials, `HOST_PORT`, `ALLOWED_HOSTS`, and the `VITE_*` variables needed for the SPA build. `direnv` is already configured to load whichever file matches `ENV`.
+- The `web` build outputs the tag `localhost/notsolong_web:latest`. You can confirm it exists with `podman images --filter reference=localhost/notsolong_web:latest`.
 
-### Optional: rootless systemd service
+### Local build, run, and maintenance
 
-To have your user-level systemd manage the stack automatically:
+1. `make podman-build` – runs the multi-stage Containerfile, compiles the SPA, collects Django static files, and tags the result as `localhost/notsolong_web:latest`.
+2. `make podman-up` – starts Postgres 18 plus the Django/Gunicorn container on `${HOST_PORT}` (defaults to `1111`).
+3. Visit `http://localhost:${HOST_PORT}` (the `/api/` endpoints share the same origin).
+4. Useful helpers:
+   - `make podman-logs` – tails the `web` container.
+   - `podman compose -f podman-compose.yml exec web python manage.py <command>` – run management commands inside the container.
+   - `make podman-down` – stop and remove the pod; remove persistent data by deleting `./pgdata`.
 
-1. Copy `systemd/notsolong.service` to `~/.config/systemd/user/`.
-2. Run `systemctl --user daemon-reload`.
-3. Enable + start it: `systemctl --user enable --now notsolong.service`.
-4. View logs with `journalctl --user -u notsolong.service -f`.
+### Exporting and shipping images
 
-The unit simply runs `podman compose up -d` on start and `podman compose down` on stop, so it stays in sync with the existing Makefile targets. No root privileges required.
+- `make podman-save` packages every image referenced by `podman compose images` into `dist/notsolong-images.tar`. Run this after `make podman-build` to capture fresh layers.
+- `make podman-ship` depends on `podman-save`, then copies the tarball to `${REMOTE_HOST}` (default `notsolong.com`) and runs `podman load -i /tmp/notsolong-images.tar` remotely before restarting `systemctl --user notsolong.service`.
+- Override `REMOTE_HOST`, `REMOTE_IMAGE_PATH`, or `REMOTE_DEPLOY_USER` when invoking the target if you need a different destination.
+- Old dangling layers (the `<none>` entries in `podman images`) can be cleaned up with `podman image prune` once you no longer need that cache.
+
+### Remote systemd automation
+
+- `make podman-systemd-remote` copies `systemd/notsolong.service` to the remote host, enables linger for `${REMOTE_DEPLOY_USER}`, installs the unit under `~/.config/systemd/user/`, reloads the daemon, and enables + starts the service.
+- The unit wraps `podman compose up -d`/`down` so it stays aligned with the Makefile targets. Logs remain available via `journalctl --user -u notsolong.service -f` on the remote box.
+
+For local, user-level automation, follow the same steps but run them directly on your machine (see `make podman-systemd` for the non-SSH helper).
 
 
 

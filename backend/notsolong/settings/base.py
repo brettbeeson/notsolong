@@ -1,5 +1,6 @@
 """Base Django settings shared across environments."""
 
+import os
 from datetime import timedelta
 from pathlib import Path
 
@@ -8,12 +9,11 @@ import environ
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 APPS_DIR = BASE_DIR / "notsolong"
 
-env = environ.Env(
-    DJANGO_DEBUG=(bool, False),
-)
-ENV_FILE = BASE_DIR / ".env"
-if ENV_FILE.exists():
-    environ.Env.read_env(ENV_FILE)
+# # Read .env.<ENV> into `env`
+# ENV_NAME = os.environ["ENV"]  # fails if not set
+env = environ.Env()
+# env_file = BASE_DIR / f".env.{ENV_NAME}"
+# environ.Env.read_env(env_file)
 
 FRONTEND_DIST_DIR = Path(
     env(
@@ -21,6 +21,7 @@ FRONTEND_DIST_DIR = Path(
         default=str(BASE_DIR / "frontend" / "dist"),
     )
 )
+CORS_ALLOW_ALL_ORIGINS = True
 
 SECRET_KEY = env("DJANGO_SECRET_KEY", default="change-me-in-prod")
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
@@ -124,7 +125,6 @@ SIMPLE_JWT = {
     "USER_ID_FIELD": "email",
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
 
 LOGGING = {
     "version": 1,

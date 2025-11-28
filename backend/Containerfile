@@ -6,23 +6,28 @@
 FROM docker.io/library/node:22 AS frontend-builder
 WORKDIR /app/frontend
 
-ARG VITE_API_BASE_URL=/api
-ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+# Pass these both in during build. Env vars are *not* automatically passed from host.
+# The ${VITE_API_BASE_URL} below is *not* an env var, but a build arg
+
+ARG VITE_TURNSTILE_SITE_KEY
+# Bake into the environment for the build so Vite can pick them up
+# via import.meta.env.VITE_...
+ENV VITE_TURNSTILE_SITE_KEY=${VITE_TURNSTILE_SITE_KEY}
 
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 
 COPY frontend/ ./
-# Use the podman-specific environment file .env.podman which has TURNSTILE keys etc.
-RUN npm run build -- --mode podman
+RUN npm run build
 
 ###############################
 # Django + Gunicorn stage     #
 ###############################
 FROM docker.io/library/python:3.13-slim AS backend
+
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1  
 
 RUN apt-get update \
     && apt-get install --no-install-recommends -y build-essential libpq-dev \
@@ -36,15 +41,19 @@ COPY --from=frontend-builder /app/frontend/dist /app/frontend_dist
 RUN pip install --upgrade pip \
     && pip install --no-cache-dir --root-user-action=ignore .
 
+
 ENV DJANGO_SETTINGS_MODULE=notsolong.settings.prod \
-    DJANGO_SECRET_KEY=build-stage-secret \
-    DATABASE_URL=sqlite:////app/build.sqlite3 \
-    FRONTEND_DIST_DIR=/app/frontend_dist \
-    PORT=1111
+    ENV=prod \
+    DJANGO_SECRET_KEY=dummy_build_secret \
+    FRONTEND_DIST_DIR=/app/frontend_dist
 
 RUN python manage.py collectstatic --noinput
 
+# Clear build-time secret; runtime secret injected via env file
+ENV DJANGO_SECRET_KEY=
+
 RUN chmod +x scripts/entrypoint.sh
 
-EXPOSE 1111
+ARG HOST_PORT
+EXPOSE ${HOST_PORT}
 CMD ["/app/scripts/entrypoint.sh"]

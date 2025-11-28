@@ -52,19 +52,12 @@ const AccountPanel = ({ open, user, onClose, onSave }: AccountPanelProps) => {
   };
 
   return (
-    <div className="account-page" role="dialog" aria-modal="true">
-      <div className="account-page-panel">
-        <div className="account-page-header">
-          <div>
-            <p className="account-page-kicker">Account</p>
-            <h2>{getDisplayName(user)}</h2>
-            {user.email && <p className="account-page-subtitle">{user.email}</p>}
-          </div>
-          <button className="icon-button" aria-label="Close account panel" onClick={handleClose}>
-            ×
-          </button>
-        </div>
-
+    <div className="account-page" role="dialog" aria-modal="true" onClick={handleClose}>
+      <div className="account-page-panel" onClick={(event) => event.stopPropagation()}>
+        <button className="account-close-button" aria-label="Close account panel" onClick={handleClose}>
+          ×
+        </button>
+       
         <form className="account-form form" onSubmit={handleSubmit}>
           <label>
             Display name

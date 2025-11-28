@@ -1,6 +1,6 @@
 pgdata/
-.env.podman
 *.sqlite3
+*.env*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -140,7 +140,6 @@ celerybeat.pid
 
 # Environments
 .env
-.envrc
 .venv
 env/
 venv/

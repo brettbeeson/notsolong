@@ -20,16 +20,25 @@ services:
       retries: 5
 
   web:
+    image: localhost/notsolong_web:latest
     build:
+      # Note! Env vars from host environment are not automatically passed to build
+      # Instead, we explicitly pass them as build args here
       context: .
       dockerfile: backend/Containerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY}
+        HOST_PORT: ${HOST_PORT}
     restart: unless-stopped
     env_file:
-      - backend/.env.podman
+      - .env.prod
+    environment:
+      # Cannot set these in .env as they depend on HOST_PORT and no variable substitution there
+      DJANGO_CSRF_TRUSTED_ORIGINS: http://localhost:${HOST_PORT}, http://127.0.0.1:${HOST_PORT}
     depends_on:
       db:
         condition: service_healthy
     ports:
       # host:container
       - ${HOST_PORT}:8000
-    # No container volumes here; bind mount is handled under db
