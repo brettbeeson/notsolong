@@ -39,6 +39,25 @@ const MobileMenu = ({
             ×
           </button>
         </div>
+        
+        {user ? (
+          <div className="mobile-menu-section">
+            <p className="mobile-menu-subheading">Titles</p>
+            <button
+              className="primary button-medium"
+              onClick={() => {
+                onAddTitle();
+                onClose();
+              }}
+            >
+              Add a Title
+            </button>
+          </div>
+        ) : null}
+        <div className="mobile-menu-section">
+          <p className="mobile-menu-subheading">Filters</p>
+          <CategoryFilter variant="menu" value={category} onChange={onCategoryChange} />
+        </div>
         <div className="mobile-menu-section">
           <p className="mobile-menu-subheading">{mobileAccountName}</p>
           {user ? (
@@ -75,24 +94,6 @@ const MobileMenu = ({
               Log in
             </button>
           )}
-        </div>
-        {user ? (
-          <div className="mobile-menu-section">
-            <p className="mobile-menu-subheading">Titles</p>
-            <button
-              className="primary button-medium"
-              onClick={() => {
-                onAddTitle();
-                onClose();
-              }}
-            >
-              Add a Title
-            </button>
-          </div>
-        ) : null}
-        <div className="mobile-menu-section">
-          <p className="mobile-menu-subheading">Filters</p>
-          <CategoryFilter variant="menu" value={category} onChange={onCategoryChange} />
         </div>
       </div>
     </div>

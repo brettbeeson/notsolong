@@ -111,12 +111,14 @@ select {
 }
 
 .category-filter-menu .category-chips {
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap; /* Let chips shrink so multiple fit per row in the mobile sheet */
+  justify-content: flex-start;
 }
 
 .category-filter-menu .chip {
-  width: 100%;
-  justify-content: flex-start;
+  width: auto;
+  justify-content: center;
 }
 
 .category-filter-mobile {
@@ -643,8 +645,7 @@ select {
   gap: 0.5rem;
 }
 
-.modal-backdrop,
-.account-page {
+.modal-backdrop {
   position: fixed;
   inset: 0;
   background: var(--color-backdrop);
@@ -657,8 +658,7 @@ select {
   z-index: 30;
 }
 
-.modal-panel,
-.account-page-panel {
+.modal-panel {
   width: min(520px, calc(100% - clamp(1rem, 4vw, 2rem)));
   background: var(--color-surface);
   border-radius: 1.25rem;
@@ -667,13 +667,10 @@ select {
   max-height: calc(100vh - clamp(2rem, 8vw, 4rem));
   overflow-x: auto;
   overflow-y: auto;
-}
-
-.account-page-panel {
   position: relative;
 }
 
-.account-close-button {
+.modal-close-button {
   position: absolute;
   top: 1rem;
   right: 1rem;
@@ -687,31 +684,8 @@ select {
   line-height: 1;
 }
 
-.account-close-button:hover {
+.modal-close-button:hover {
   background: rgba(0, 0, 0, 0.1);
-}
-
-.account-page-header .icon-button {
-  margin-left: auto;
-}
-
-.account-page-kicker {
-  margin: 0 0 0.25rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.8rem;
-  color: var(--color-muted-light);
-}
-
-.account-page-header h2 {
-  margin: 0;
-  font-size: 1.35rem;
-  color: #1d1f2e;
-}
-
-.account-page-subtitle {
-  margin: 0.25rem 0 0;
-  color: var(--color-muted);
 }
 
 .account-form-actions {
@@ -867,11 +841,14 @@ select {
     position: fixed;
     inset: 0;
     background: rgba(15, 13, 36, 0.75);
-    display: block;
+    display: flex;
+    justify-content: flex-end;
+    align-items: stretch;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
     z-index: 40;
+    overflow-y: auto;
   }
 
   .mobile-menu-overlay.mobile-menu-open {
@@ -884,12 +861,13 @@ select {
     flex-direction: column;
     gap: 1.25rem;
     width: min(360px, 90%);
-    margin-left: auto;
-    height: 100%;
+    height: auto;
+    min-height: 100%;
     padding: 1.5rem;
     background: var(--color-surface);
     border-radius: 1.25rem 0 0 1.25rem;
     box-shadow: -10px 0 35px rgba(15, 13, 36, 0.4);
+    overflow-y: auto; /* Allow sheet contents to scroll past the viewport */
   }
 
   .mobile-menu-panel-header h2,

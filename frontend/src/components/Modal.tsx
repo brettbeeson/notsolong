@@ -1,8 +1,8 @@
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 
 interface ModalProps {
   open: boolean;
-  title: string;
+  title?: string;
   onClose: () => void;
   children: ReactNode;
 }
@@ -12,15 +12,25 @@ export const Modal = ({ open, title, onClose, children }: ModalProps) => {
     return null;
   }
 
+  const handleBackdropClick = () => {
+    onClose();
+  };
+
+  const stopPropagation = (event: MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+  };
+
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true">
-      <div className="modal-panel">
-        <div className="modal-header">
-          <h2>{title}</h2>
-          <button className="icon-button" onClick={onClose} aria-label="Close dialog">
-            ×
-          </button>
-        </div>
+    <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={handleBackdropClick}>
+      <div className="modal-panel" onClick={stopPropagation}>
+        <button className="modal-close-button" onClick={onClose} aria-label="Close dialog">
+          ×
+        </button>
+        {title ? (
+          <div className="modal-header">
+            <h2>{title}</h2>
+          </div>
+        ) : null}
         <div className="modal-body">{children}</div>
       </div>
     </div>

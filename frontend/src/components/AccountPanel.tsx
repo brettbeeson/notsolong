@@ -4,6 +4,7 @@ import type { FormEvent } from "react";
 import type { User } from "../types/api";
 import { getDisplayName } from "../utils/user";
 import { getErrorMessage } from "../utils/errors";
+import { Modal } from "./Modal";
 
 interface AccountPanelProps {
   open: boolean;
@@ -17,10 +18,6 @@ const AccountPanel = ({ open, user, onClose, onSave }: AccountPanelProps) => {
   const [email, setEmail] = useState(user?.email ?? "");
   const [status, setStatus] = useState<"idle" | "saving">("idle");
   const [error, setError] = useState<string | null>(null);
-
-  if (!open || !user) {
-    return null;
-  }
 
   const resetState = () => {
     setStatus("idle");
@@ -51,48 +48,46 @@ const AccountPanel = ({ open, user, onClose, onSave }: AccountPanelProps) => {
     resetState();
   };
 
+  if (!open || !user) {
+    return null;
+  }
+
   return (
-    <div className="account-page" role="dialog" aria-modal="true" onClick={handleClose}>
-      <div className="account-page-panel" onClick={(event) => event.stopPropagation()}>
-        <button className="account-close-button" aria-label="Close account panel" onClick={handleClose}>
-          ×
-        </button>
-       
-        <form className="account-form form" onSubmit={handleSubmit}>
-          <label>
-            Display name
-            <input
-              value={displayName}
-              onChange={(e) => {
-                setDisplayName(e.target.value);
-                markDirty();
-              }}
-              placeholder="Add a name"
-            />
-          </label>
+    <Modal open={open} title={`Account • ${getDisplayName(user)}`} onClose={handleClose}>
+      <form className="account-form form" onSubmit={handleSubmit}>
+        <label>
+          Display name
+          <input
+            value={displayName}
+            onChange={(e) => {
+              setDisplayName(e.target.value);
+              markDirty();
+            }}
+            placeholder="Add a name"
+          />
+        </label>
 
-          <label>
-            Email
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                markDirty();
-              }}
-              required
-            />
-          </label>
+        <label>
+          Email
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              markDirty();
+            }}
+            required
+          />
+        </label>
 
-          {error && <p className="error">{error}</p>}
-          <div className="account-form-actions">
-            <button type="submit" className="primary" disabled={status === "saving"}>
-              {status === "saving" ? "Saving..." : "Save changes"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {error && <p className="error">{error}</p>}
+        <div className="account-form-actions">
+          <button type="submit" className="primary" disabled={status === "saving"}>
+            {status === "saving" ? "Saving..." : "Save changes"}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 };
 
