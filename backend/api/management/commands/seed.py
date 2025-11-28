@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from api.models import NoSoLong, Title, TitleCategory, Vote
+from api.models import Recap, Title, TitleCategory, Vote
 from api.services.votes import VoteService
 
 User = get_user_model()
@@ -100,19 +100,19 @@ class Command(BaseCommand):
         with transaction.atomic():
             if options["force"]:
                 Vote.objects.all().delete()
-                NoSoLong.objects.all().delete()
+                Recap.objects.all().delete()
                 Title.objects.all().delete()
                 User.objects.filter(email__endswith="@notsolong.io").delete()
 
             users = self._create_users()
             titles = self._create_titles(users)
-            quotes = self._create_recaps(users, titles)
-            vote_total = self._create_votes(users, quotes)
+            recaps = self._create_recaps(users, titles)
+            vote_total = self._create_votes(users, recaps)
             VoteService.refresh_vote_metrics()
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Seeded {len(users)} users, {len(titles)} titles, {len(quotes)} recaps, and {vote_total} votes."
+                f"Seeded {len(users)} users, {len(titles)} titles, {len(recaps)} recaps, and {vote_total} votes."
             )
         )
 
@@ -157,32 +157,32 @@ class Command(BaseCommand):
         return created_titles
 
     def _create_recaps(self, users, titles):
-        quotes = []
+        recaps = []
         if not titles or not users:
-            return quotes
+            return recaps
 
         possible_pairs = [(title, user) for title in titles for user in users]
         if not possible_pairs:
-            return quotes
+            return recaps
 
         selections = random.sample(possible_pairs, min(TARGET_RECAP_COUNT, len(possible_pairs)))
         for idx, (title, user) in enumerate(selections, start=1):
             snippet = random.choice(RECAP_SNIPPETS)
             detail = random.choice(RECAP_DETAILS)
             text = f"{snippet} {detail} (recap #{idx})"
-            quote = NoSoLong.objects.create(title=title, user=user, text=text, score=0)
-            quotes.append(quote)
-        return quotes
+            recap = Recap.objects.create(title=title, user=user, text=text, score=0)
+            recaps.append(recap)
+        return recaps
 
-    def _create_votes(self, users, quotes):
-        if not quotes:
+    def _create_votes(self, users, recaps):
+        if not recaps:
             return 0
         voters = random.sample(list(users), min(VOTERS_TO_USE, len(users)))
         total = 0
         for voter in voters:
-            picks = random.sample(list(quotes), min(random.randint(5, 12), len(quotes)))
-            for quote in picks:
+            picks = random.sample(list(recaps), min(random.randint(5, 12), len(recaps)))
+            for recap in picks:
                 value = random.choice((Vote.UPVOTE, Vote.UPVOTE, Vote.DOWNVOTE))
-                Vote.objects.create(user=voter, quote=quote, value=value)
+                Vote.objects.create(user=voter, recap=recap, value=value)
                 total += 1
         return total

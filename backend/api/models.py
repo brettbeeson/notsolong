@@ -32,9 +32,9 @@ class Title(models.Model):
         return self.name
 
 
-class NoSoLong(models.Model):
-    title = models.ForeignKey(Title, related_name="nosolongs", on_delete=models.CASCADE)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="nosolongs", on_delete=models.CASCADE)
+class Recap(models.Model):
+    title = models.ForeignKey(Title, related_name="recaps", on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="recaps", on_delete=models.CASCADE)
     text = models.TextField()
     score = models.IntegerField(default=0)
     upvotes = models.PositiveIntegerField(default=0)
@@ -45,7 +45,7 @@ class NoSoLong(models.Model):
     class Meta:
         ordering = ["-score", "-created_at"]
         constraints = [
-            models.UniqueConstraint(fields=["title", "user"], name="unique_title_user_nosolong"),
+            models.UniqueConstraint(fields=["title", "user"], name="unique_title_user_recap"),
         ]
 
     def __str__(self) -> str:  # pragma: no cover - trivial
@@ -56,13 +56,13 @@ class Vote(models.Model):
     UPVOTE = 1
     DOWNVOTE = -1
 
-    quote = models.ForeignKey(NoSoLong, related_name="votes", on_delete=models.CASCADE)
+    recap = models.ForeignKey(Recap, related_name="votes", on_delete=models.CASCADE)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="votes", on_delete=models.CASCADE)
     value = models.SmallIntegerField(choices=((DOWNVOTE, "Downvote"), (UPVOTE, "Upvote")))
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields=["quote", "user"], name="unique_quote_vote")]
+        constraints = [models.UniqueConstraint(fields=["recap", "user"], name="unique_recap_vote")]
 
     def __str__(self) -> str:  # pragma: no cover - trivial
-        return f"{self.user} -> {self.quote_id} ({self.value})"
+        return f"{self.user} -> {self.recap_id} ({self.value})"

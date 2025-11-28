@@ -1,7 +1,7 @@
 import { apiClient } from "./client";
 import { isAxiosError } from "axios";
 import type {
-  NoSoLong,
+  Recap,
   RegisterResponse,
   Title,
   TitleBundle,
@@ -59,31 +59,25 @@ export const createTitle = async (
   return data;
 };
 
-export const createNoSoLong = async (payload: {
-  title: number;
-  text: string;
-}) => {
-  const { data } = await apiClient.post<NoSoLong>("/nosolongs/", payload);
+export const createRecap = async (payload: { title: number; text: string }) => {
+  const { data } = await apiClient.post<Recap>("/recaps/", payload);
   return data;
 };
 
-export const voteNoSoLong = async (id: number, value: -1 | 0 | 1) => {
-  const { data } = await apiClient.post<NoSoLong>(`/nosolongs/${id}/vote/`, {
+export const voteRecap = async (id: number, value: -1 | 0 | 1) => {
+  const { data } = await apiClient.post<Recap>(`/recaps/${id}/vote/`, {
     value,
   });
   return data;
 };
 
-export const updateNoSoLong = async (id: number, payload: { text: string }) => {
-  const { data } = await apiClient.patch<NoSoLong>(
-    `/nosolongs/${id}/`,
-    payload
-  );
+export const updateRecap = async (id: number, payload: { text: string }) => {
+  const { data } = await apiClient.patch<Recap>(`/recaps/${id}/`, payload);
   return data;
 };
 
-export const deleteNoSoLong = async (id: number) => {
-  await apiClient.delete(`/nosolongs/${id}/`);
+export const deleteRecap = async (id: number) => {
+  await apiClient.delete(`/recaps/${id}/`);
 };
 
 type LoginPayload = {

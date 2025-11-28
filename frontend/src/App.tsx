@@ -3,13 +3,13 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 
 import "./App.css";
 import {
-  deleteNoSoLong,
+  deleteRecap,
   fetchRandomTitle,
   fetchTitleSummary,
   NoTitlesAvailableError,
-  voteNoSoLong,
+  voteRecap,
 } from "./api/endpoints";
-import AddNoSoLongDialog from "./components/AddNoSoLongDialog";
+import AddRecapDialog from "./components/AddRecapDialog";
 import AuthDialog from "./components/AuthDialog";
 import AccountPanel from "./components/AccountPanel";
 import CategoryFilter from "./components/CategoryFilter";
@@ -17,9 +17,11 @@ import NewTitleDialog from "./components/NewTitleDialog";
 import TitleViewer from "./components/TitleViewer";
 import UserMenu from "./components/UserMenu";
 import MobileMenu from "./components/MobileMenu";
+import BottomBar from "./components/BottomBar";
+import DesktopNavigation from "./components/DesktopNavigation";
 import { useAuth } from "./hooks/useAuth";
 import { useHistoryStore } from "./store/useHistoryStore";
-import type { NoSoLong, TitleBundle, TitleCategory } from "./types/api";
+import type { Recap, TitleBundle, TitleCategory } from "./types/api";
 import { getErrorMessage } from "./utils/errors";
 
 const detectSwipeCapability = () => {
@@ -54,7 +56,7 @@ function App() {
   const [isAuthOpen, setAuthOpen] = useState(false);
   const [isAccountOpen, setAccountOpen] = useState(false);
   const [userVotes, setUserVotes] = useState<Record<number, -1 | 0 | 1 | undefined>>({});
-  const [editingQuote, setEditingQuote] = useState<NoSoLong | null>(null);
+  const [editingRecap, setEditingRecap] = useState<Recap | null>(null);
   const swipeStartX = useRef<number | null>(null);
   const [isSwipeCapable, setSwipeCapable] = useState<boolean>(() => detectSwipeCapability());
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -63,7 +65,7 @@ function App() {
   const [isForwardExhausted, setForwardExhausted] = useState(false);
 
   const normalizeBundle = useCallback((data: TitleBundle) => {
-    const sortedOthers = [...data.other_nosolongs].sort((a, b) => {
+    const sortedOthers = [...data.other_recaps].sort((a, b) => {
       const scoreDelta = (b.score ?? 0) - (a.score ?? 0);
       if (scoreDelta !== 0) {
         return scoreDelta;
@@ -76,14 +78,14 @@ function App() {
     });
     return {
       ...data,
-      other_nosolongs: sortedOthers,
+      other_recaps: sortedOthers,
     };
   }, []);
 
   const syncVotesFromBundle = useCallback((data: TitleBundle) => {
     setUserVotes((prev) => {
       const next = { ...prev };
-      const applyVote = (quote?: NoSoLong | null) => {
+      const applyVote = (quote?: Recap | null) => {
         if (!quote) return;
         const vote = quote.current_user_vote;
         if (vote === 1 || vote === -1) {
@@ -92,8 +94,8 @@ function App() {
           delete next[quote.id];
         }
       };
-      applyVote(data.top_nosolong);
-      data.other_nosolongs.forEach(applyVote);
+      applyVote(data.top_recap);
+      data.other_recaps.forEach(applyVote);
       return next;
     });
   }, []);
@@ -145,13 +147,13 @@ function App() {
 
   const openCreateRecap = useCallback(() => {
     if (!requireAuth()) return;
-    setEditingQuote(null);
+    setEditingRecap(null);
     setRecapDialogOpen(true);
   }, [requireAuth]);
 
-  const handleEditNoSoLong = useCallback((quote: NoSoLong) => {
+  const handleEditRecap = useCallback((quote: Recap) => {
     if (!requireAuth()) return;
-    setEditingQuote(quote);
+    setEditingRecap(quote);
     setRecapDialogOpen(true);
   }, [requireAuth]);
 
@@ -274,7 +276,7 @@ function App() {
     if (!bundle || !requireAuth()) return;
     setVoteTarget(quoteId);
     try {
-      await voteNoSoLong(quoteId, value);
+      await voteRecap(quoteId, value);
       setLocalUserVote(quoteId, value);
       await loadTitleSummary(bundle.title.id);
     } catch (err) {
@@ -289,14 +291,14 @@ function App() {
     await loadTitleSummary(bundle.title.id, true);
   }, [bundle, loadTitleSummary]);
 
-  const handleDeleteNoSoLong = useCallback(
-    async (quote: NoSoLong) => {
+  const handleDeleteRecap = useCallback(
+    async (quote: Recap) => {
       if (!requireAuth()) return;
       // const confirmed = window.confirm("Delete your recap? This cannot be undone.");
       // if (!confirmed) return;
       try {
-        await deleteNoSoLong(quote.id);
-        setEditingQuote((current) => {
+        await deleteRecap(quote.id);
+        setEditingRecap((current) => {
           if (current?.id === quote.id) {
             setRecapDialogOpen(false);
             return null;
@@ -358,8 +360,6 @@ function App() {
     endSwipe(event.clientX);
   };
 
-  // const showNavigation=!isSwipeCapable;
-  const showNavigation = true; // even for swipe phone, as can be hard to swipe 
   const baseStageClass = "title-viewer-stage";
   const stageAnimationClass = isTitleAnimating
     ? transitionDirection === "backward"
@@ -368,14 +368,18 @@ function App() {
     : "";
   const stageClassName = [baseStageClass, stageAnimationClass].filter(Boolean).join(" ");
   const closeMobileMenu = () => setMobileMenuOpen(false);
+  const disableBackNav = !bundle || !canGoBack || loading;
+  const disableNextNav = !bundle || loading || (!canGoForward && isForwardExhausted);
   
   return (
     <div className="app-shell">
       <header className="app-header">
-        <div>
-          <h1>Not So Long</h1>
-          <p className="tagline">Find the recap which is as short as possible, but not shorter!</p>
-        </div>
+        
+          <a href="/"><img className="app-logo" src="/favicon.ico" alt="Not So Long logo" /></a>
+          <div className="app-title-group">
+            <h1 className="app-title">Not So Long</h1>
+            <p className="tagline">Find the recap which is as short as possible, but not shorter!</p>
+          </div>
         <div className="auth-actions">
           {user ? (
             <UserMenu
@@ -420,7 +424,12 @@ function App() {
             value={category}
             onChange={handleCategoryChange}
           />
-         
+          <DesktopNavigation
+            onBack={handleBack}
+            onNext={handleNext}
+            disableBack={disableBackNav}
+            disableNext={disableNextNav}
+          />
         </div>
       </div>
 
@@ -440,33 +449,34 @@ function App() {
             onVote={handleVote}
             voteDisabledFor={voteTarget}
             userVotes={userVotes}
-            onAddNoSoLong={openCreateRecap}
+            onAddRecap={openCreateRecap}
             currentUserEmail={user?.email ?? null}
-            onEditNoSoLong={handleEditNoSoLong}
-            onDeleteNoSoLong={(quote) => {
-              void handleDeleteNoSoLong(quote);
+            onEditRecap={handleEditRecap}
+            onDeleteRecap={(quote) => {
+              void handleDeleteRecap(quote);
             }}
-            showNavigation={showNavigation}
-            canGoBack={canGoBack}
-            canGoForward={canGoForward}
-            isForwardExhausted={isForwardExhausted}
-            onBack={handleBack}
-            onNext={handleNext}
           />
         </div>
       </div>
 
-      <AddNoSoLongDialog
+      <BottomBar
+        onBack={handleBack}
+        onNext={handleNext}
+        disableBack={disableBackNav}
+        disableNext={disableNextNav}
+      />
+
+      <AddRecapDialog
         open={isRecapDialogOpen}
-        title={editingQuote?.title ?? bundle?.title ?? null}
-        existingQuote={editingQuote}
+        title={editingRecap?.title ?? bundle?.title ?? null}
+        existingQuote={editingRecap}
         onClose={() => {
           setRecapDialogOpen(false);
-          setEditingQuote(null);
+          setEditingRecap(null);
         }}
         onCreated={async () => {
           await refreshActiveTitle();
-          setEditingQuote(null);
+          setEditingRecap(null);
           setRecapDialogOpen(false);
         }}
       />

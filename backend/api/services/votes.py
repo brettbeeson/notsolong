@@ -7,26 +7,26 @@ from typing import Any, Iterable
 from django.db import transaction
 from django.db.models import F, Case, IntegerField, QuerySet, Sum, When
 
-from ..models import NoSoLong, Vote
+from ..models import Recap, Vote
 
 
 class VoteService:
     """Encapsulate the voting workflow with transactional safety."""
 
     @staticmethod
-    def apply_vote(nosolong: NoSoLong, user: Any, value: int) -> NoSoLong:
+    def apply_vote(recap: Recap, user: Any, value: int) -> Recap:
         with transaction.atomic():
-            deltas = VoteService._apply_vote_deltas(nosolong, user, value)
+            deltas = VoteService._apply_vote_deltas(recap, user, value)
             if deltas:
                 updates = {field: F(field) + delta for field, delta in deltas.items() if delta}
                 if updates:
-                    NoSoLong.objects.filter(pk=nosolong.pk).update(**updates)
-        nosolong.refresh_from_db()
-        return nosolong
+                    Recap.objects.filter(pk=recap.pk).update(**updates)
+        recap.refresh_from_db()
+        return recap
 
     @staticmethod
-    def _apply_vote_deltas(nosolong: NoSoLong, user: Any, value: int) -> dict[str, int]:
-        vote = Vote.objects.select_for_update().filter(quote=nosolong, user=user).first()
+    def _apply_vote_deltas(recap: Recap, user: Any, value: int) -> dict[str, int]:
+        vote = Vote.objects.select_for_update().filter(recap=recap, user=user).first()
 
         if value == 0:
             if not vote:
@@ -43,28 +43,28 @@ class VoteService:
             vote.save(update_fields=["value"])
             return deltas
 
-        Vote.objects.create(quote=nosolong, user=user, value=value)
+        Vote.objects.create(recap=recap, user=user, value=value)
         return VoteService._delta_for_transition(None, value)
 
     @staticmethod
-    def refresh_vote_metrics(quotes: QuerySet[NoSoLong] | Iterable[int] | None = None) -> None:
+    def refresh_vote_metrics(recaps: QuerySet[Recap] | Iterable[int] | None = None) -> None:
         """Recalculate score/upvote/downvote totals for the provided recaps."""
 
-        if quotes is None:
-            queryset = NoSoLong.objects.all()
-            quote_ids = list(queryset.values_list("pk", flat=True))
-        elif isinstance(quotes, QuerySet):
-            queryset = quotes
-            quote_ids = list(queryset.values_list("pk", flat=True))
+        if recaps is None:
+            queryset = Recap.objects.all()
+            recap_ids = list(queryset.values_list("pk", flat=True))
+        elif isinstance(recaps, QuerySet):
+            queryset = recaps
+            recap_ids = list(queryset.values_list("pk", flat=True))
         else:
-            quote_ids = list(quotes)
+            recap_ids = list(recaps)
 
-        if not quote_ids:
+        if not recap_ids:
             return
 
         aggregates = (
-            Vote.objects.filter(quote_id__in=quote_ids)
-            .values("quote_id")
+            Vote.objects.filter(recap_id__in=recap_ids)
+            .values("recap_id")
             .annotate(
                 score_total=Sum("value"),
                 up_total=Sum(Case(When(value=Vote.UPVOTE, then=1), default=0, output_field=IntegerField())),
@@ -72,10 +72,10 @@ class VoteService:
             )
         )
 
-        metrics = {entry["quote_id"]: entry for entry in aggregates}
-        for quote_id in quote_ids:
-            data = metrics.get(quote_id, {})
-            NoSoLong.objects.filter(pk=quote_id).update(
+        metrics = {entry["recap_id"]: entry for entry in aggregates}
+        for recap_id in recap_ids:
+            data = metrics.get(recap_id, {})
+            Recap.objects.filter(pk=recap_id).update(
                 score=data.get("score_total", 0) or 0,
                 upvotes=data.get("up_total", 0) or 0,
                 downvotes=data.get("down_total", 0) or 0,

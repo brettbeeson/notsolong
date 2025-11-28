@@ -1,22 +1,16 @@
-import type { NoSoLong, TitleBundle } from "../types/api";
-import NoSoLongCard from "./NoSoLongCard";
+import type { Recap, TitleBundle } from "../types/api";
+import RecapCard from "./RecapCard";
 
 interface TitleViewerProps {
   bundle: TitleBundle | null;
   loading: boolean;
   onVote: (quoteId: number, value: -1 | 0 | 1) => void;
   voteDisabledFor?: number | null;
-  onAddNoSoLong: () => void;
+  onAddRecap: () => void;
   userVotes: Record<number, -1 | 0 | 1 | undefined>;
   currentUserEmail?: string | null;
-  onEditNoSoLong: (quote: NoSoLong) => void;
-  onDeleteNoSoLong: (quote: NoSoLong) => void;
-  showNavigation: boolean;
-  onBack: () => void;
-  onNext: () => void;
-  canGoBack: boolean;
-  canGoForward: boolean;
-  isForwardExhausted: boolean;
+  onEditRecap: (quote: Recap) => void;
+  onDeleteRecap: (quote: Recap) => void;
 }
 
 const TitleViewer = ({
@@ -24,17 +18,11 @@ const TitleViewer = ({
   loading,
   onVote,
   voteDisabledFor,
-  onAddNoSoLong,
+  onAddRecap,
   userVotes,
   currentUserEmail,
-  onEditNoSoLong,
-  onDeleteNoSoLong,
-  showNavigation,
-  onBack,
-  onNext,
-  canGoBack,
-  canGoForward,
-  isForwardExhausted,
+  onEditRecap,
+  onDeleteRecap,
 }: TitleViewerProps) => {
   if (loading) {
     return <div className="panel">Loading a fresh Title...</div>;
@@ -48,20 +36,20 @@ const TitleViewer = ({
     );
   }
 
-  const { title, top_nosolong, other_nosolongs } = bundle;
+  const { title, top_recap, other_recaps } = bundle;
   const authorName = title.author?.trim();
-  const allQuotes: NoSoLong[] = [top_nosolong, ...other_nosolongs].filter(Boolean) as NoSoLong[];
+  const allQuotes: Recap[] = [top_recap, ...other_recaps].filter(Boolean) as Recap[];
   const userQuote = currentUserEmail
     ? allQuotes.find((quote) => quote.user.email === currentUserEmail)
     : null;
   const canAddRecap = !userQuote;
-  const userOwnsTop = Boolean(top_nosolong && userQuote && userQuote.id === top_nosolong.id);
+  const userOwnsTop = Boolean(top_recap && userQuote && userQuote.id === top_recap.id);
 
   const handlePrimaryCta = () => {
     if (userQuote) {
-      onEditNoSoLong(userQuote);
+      onEditRecap(userQuote);
     } else {
-      onAddNoSoLong();
+      onAddRecap();
     }
   };
 
@@ -72,46 +60,24 @@ const TitleViewer = ({
           <p className="category">{title.category.toUpperCase()}</p>
           <div className="title-heading">
             <h1>{title.name}</h1>
-            {showNavigation && (
-              <div className="title-nav-controls" aria-label="Title navigation controls">
-                <button
-                  type="button"
-                  className="title-nav-button"
-                  onClick={onBack}
-                  disabled={!canGoBack || loading}
-                  aria-label="Show previous title"
-                >
-                  ←
-                </button>
-                <button
-                  type="button"
-                  className="title-nav-button"
-                  onClick={onNext}
-                  disabled={loading || (!canGoForward && isForwardExhausted)}
-                  aria-label="Show next title"
-                >
-                  →
-                </button>
-              </div>
-            )}
           </div>
           {authorName && <p className="author">by {authorName}</p>}
         </div>
       </header>
       <div className="title-recaps">
-        {top_nosolong ? (
+        {top_recap ? (
           <>
             <div className="top-recap-stack">
               {userOwnsTop && <p className="top-recap-toast">Your recap is the best!</p>}
-              <NoSoLongCard
-                quote={top_nosolong}
+              <RecapCard
+                quote={top_recap}
                 highlight
-                owned={userQuote?.id === top_nosolong.id}
+                owned={userQuote?.id === top_recap.id}
                 onVote={onVote}
-                disabled={voteDisabledFor === top_nosolong.id}
-                userVoteOverride={userVotes[top_nosolong.id] ?? null}
-                onEdit={onEditNoSoLong}
-                onDelete={onDeleteNoSoLong}
+                disabled={voteDisabledFor === top_recap.id}
+                userVoteOverride={userVotes[top_recap.id] ?? null}
+                onEdit={onEditRecap}
+                onDelete={onDeleteRecap}
               />
             </div>
             {canAddRecap && (
@@ -124,7 +90,7 @@ const TitleViewer = ({
           </>
         ) : (
           <div className="empty-state">
-            <p>No recaps yet. Add yours!</p>
+            <p>No recaps yet!</p>
             {canAddRecap && (
               <button className="primary" onClick={handlePrimaryCta}>
                 Add your recap
@@ -134,16 +100,16 @@ const TitleViewer = ({
         )}
 
         <div className="other-list">
-          {other_nosolongs.map((item) => (
-            <NoSoLongCard
+          {other_recaps.map((item) => (
+            <RecapCard
               key={item.id}
               quote={item}
               owned={userQuote?.id === item.id}
               onVote={onVote}
               disabled={voteDisabledFor === item.id}
               userVoteOverride={userVotes[item.id] ?? null}
-              onEdit={onEditNoSoLong}
-              onDelete={onDeleteNoSoLong}
+              onEdit={onEditRecap}
+              onDelete={onDeleteRecap}
             />
           ))}
           

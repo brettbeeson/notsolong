@@ -13,7 +13,7 @@ export interface Title {
   created_at: string;
 }
 
-export interface NoSoLong {
+export interface Recap {
   id: number;
   title: Title;
   user: User;
@@ -28,8 +28,8 @@ export interface NoSoLong {
 
 export interface TitleBundle {
   title: Title;
-  top_nosolong: NoSoLong | null;
-  other_nosolongs: NoSoLong[];
+  top_recap: Recap | null;
+  other_recaps: Recap[];
 }
 
 export interface Tokens {

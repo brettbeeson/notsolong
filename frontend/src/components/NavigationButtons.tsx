@@ -1,46 +1,42 @@
 interface NavigationButtonsProps {
-  onNext: () => void;
   onBack: () => void;
-  canGoBack: boolean;
-  disabled?: boolean;
-  variant?: "inline" | "side";
+  onNext: () => void;
+  disableBack?: boolean;
+  disableNext?: boolean;
+  buttonClassName?: string;
+  showSpacer?: boolean;
 }
 
-const NavigationButtons = ({ onNext, onBack, canGoBack, disabled, variant = "inline" }: NavigationButtonsProps) => {
-  if (variant === "side") {
-    return (
-      <div className="nav-buttons-side">
-        <button
-          type="button"
-          className="nav-arrow nav-arrow-prev"
-          onClick={onBack}
-          disabled={!canGoBack || disabled}
-          aria-label="Show previous title"
-        >
-          ←
-        </button>
-        <button
-          type="button"
-          className="nav-arrow nav-arrow-next"
-          onClick={onNext}
-          disabled={disabled}
-          aria-label="Show next title"
-        >
-          →
-        </button>
-      </div>
-    );
-  }
-
+const NavigationButtons = ({
+  onBack,
+  onNext,
+  disableBack,
+  disableNext,
+  buttonClassName = "bottom-bar-button",
+  showSpacer = false,
+}: NavigationButtonsProps) => {
   return (
-    <div className="nav-buttons">
-      <button className="primary" onClick={onBack} disabled={!canGoBack || disabled}>
-        ← Prev
+    <>
+      <button
+        type="button"
+        className={buttonClassName}
+        onClick={onBack}
+        disabled={disableBack}
+        aria-label="Show previous title"
+      >
+        <span aria-hidden="true">←</span>
       </button>
-      <button className="primary" onClick={onNext} disabled={disabled}>
-        Next →
+      {showSpacer && <div className="bottom-bar-spacer" aria-hidden="true" />}
+      <button
+        type="button"
+        className={buttonClassName}
+        onClick={onNext}
+        disabled={disableNext}
+        aria-label="Show next title"
+      >
+        <span aria-hidden="true">→</span>
       </button>
-    </div>
+    </>
   );
 };
 

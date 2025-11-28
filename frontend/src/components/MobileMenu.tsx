@@ -34,11 +34,9 @@ const MobileMenu = ({
       onClick={onClose}
     >
       <div className="mobile-menu-panel" onClick={(event) => event.stopPropagation()}>
-        <div className="mobile-menu-panel-header">
-          <button type="button" className="icon-button" aria-label="Close menu" onClick={onClose}>
-            ×
-          </button>
-        </div>
+        <button type="button" className="mobile-menu-close" aria-label="Close menu" onClick={onClose}>
+          ×
+        </button>
         
         {user ? (
           <div className="mobile-menu-section">

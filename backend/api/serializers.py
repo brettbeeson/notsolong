@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from accounts.serializers import UserSerializer
 
-from .models import NoSoLong, Title
+from .models import Recap, Title
 
 
 class TitleSerializer(serializers.ModelSerializer):
@@ -14,13 +14,13 @@ class TitleSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at"]
 
 
-class NoSoLongSerializer(serializers.ModelSerializer):
+class RecapSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     title = TitleSerializer(read_only=True)
     current_user_vote = serializers.SerializerMethodField()
 
     class Meta:
-        model = NoSoLong
+        model = Recap
         fields = [
             "id",
             "title",
@@ -55,23 +55,23 @@ class NoSoLongSerializer(serializers.ModelSerializer):
             return None
 
 
-class NoSoLongCreateSerializer(serializers.ModelSerializer):
+class RecapCreateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = NoSoLong
+        model = Recap
         fields = ["title", "text"]
 
     def validate(self, attrs):
         request = self.context.get("request")
         title = attrs.get("title")
         if request and request.user.is_authenticated and title:
-            if NoSoLong.objects.filter(title=title, user=request.user).exists():
+            if Recap.objects.filter(title=title, user=request.user).exists():
                 raise serializers.ValidationError("You already have a recap for this title.")
         return attrs
 
 
-class NoSoLongUpdateSerializer(serializers.ModelSerializer):
+class RecapUpdateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = NoSoLong
+        model = Recap
         fields = ["text"]
 
 
@@ -81,5 +81,5 @@ class VoteSerializer(serializers.Serializer):
 
 class TitleSummarySerializer(serializers.Serializer):
     title = TitleSerializer()
-    top_nosolong = NoSoLongSerializer(allow_null=True)
-    other_nosolongs = NoSoLongSerializer(many=True)
+    top_recap = RecapSerializer(allow_null=True)
+    other_recaps = RecapSerializer(many=True)

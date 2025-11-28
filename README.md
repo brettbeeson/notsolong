@@ -1,25 +1,25 @@
 # NotSoLong – Project Scope & Technical Specification
-
-** This file is maintained by AI tooling. AI editor: KEEP THIS NOTICE **
-
----
-
+{
+  "title": { ... },
+  "top_recap": { ... },
+  "other_recaps": [ ... up to 3 ... ]
+}
 ## **1. Overview**
 
-**NotSoLong** is a mobile-friendly web app where users post short quotes (“**NoSoLongs**”) extracted from any **Title** (book, movie, podcast, speech, etc.).
-Each NoSoLong is owned by a user and can be **voted up/down**.
+**NotSoLong** is a mobile-friendly web app where users post short quotes (“**Recaps**”) extracted from any **Title** (book, movie, podcast, speech, etc.).
+Each Recap is owned by a user and can be **voted up/down**.
 
 The main UX mechanic:
 
 * App shows **one Title at a time**
 * Displays:
 
-  * The **top-ranked NoSoLong**
-  * **Additional random NoSoLongs** for the same Title
+  * The **top-ranked Recap**
+  * **Additional random Recaps** for the same Title
 * Users can:
 
   * Vote
-  * Add their own NoSoLong
+  * Add their own Recap
   * Navigate forward/back through random Titles
   * Filter Titles by **category**
 
@@ -33,18 +33,18 @@ This document defines the entire architecture for backend (Django + DRF + JWT) a
 
 * Users can:
   * Register / log in
-  * Create NoSoLongs
-  * Vote up/down on any NoSoLong (once per Title)
+  * Create Recaps
+  * Vote up/down on any Recap (once per Title)
   * Add new Titles
 * Anyone (including anonymous) can:
   * View Titles
-  * View the associated NoSoLongs
+  * View the associated Recaps
 * Main screen:
 
   * Shows **one Title at a time**
   * Shows:
-    * Top NoSoLong (highest score)
-    * Additional random NoSoLongs from that Title
+    * Top Recap (highest score)
+    * Additional random Recaps from that Title
   * Voting requires login
   * “Add mine” requires login
 * Category filter (book, movie, podcast, speech, other)
@@ -87,7 +87,7 @@ Use the custom `accounts.User` model: the email address is the primary key and `
 
 ---
 
-### **NoSoLong**
+### **Recap**
 
 | Field      | Type          | Notes                       |
 | ---------- | ------------- | --------------------------- |
@@ -107,13 +107,13 @@ Use the custom `accounts.User` model: the email address is the primary key and `
 | Field      | Type              | Notes                     |
 | ---------- | ----------------- | ------------------------- |
 | id         | AutoField         | PK                        |
-| quote      | FK(NoSoLong)      | Required                  |
+| recap      | FK(Recap)      | Required                  |
 | user       | FK(User)          | Required                  |
 | value      | SmallIntegerField | 1 = upvote, -1 = downvote |
 | created_at | DateTimeField     | auto_now_add              |
 
 **Constraint:**
-`unique_together = ("quote", "user")`
+`unique_together = ("recap", "user")`
 
 ---
 
@@ -144,8 +144,8 @@ Returns:
 ```json
 {
   "title": { ... },
-  "top_nosolong": { ... },
-  "other_nosolongs": [ ... up to 3 ... ]
+  "top_recap": { ... },
+  "other_recaps": [ ... up to 3 ... ]
 }
 ```
 
@@ -171,11 +171,11 @@ Same structure as `/random`.
 
 ---
 
-### **NoSoLong Endpoints**
+### **Recap Endpoints**
 
-#### **1. Create NoSoLong**
+#### **1. Create Recap**
 
-`POST /api/nosolongs/` (auth)
+`POST /api/recaps/` (auth)
 
 ```json
 {
@@ -187,7 +187,7 @@ Same structure as `/random`.
 
 #### **2. Vote**
 
-`POST /api/nosolongs/<id>/vote/` (auth)
+`POST /api/recaps/<id>/vote/` (auth)
 
 ```json
 { "value": 1 }      // upvote
@@ -283,12 +283,12 @@ JWT defaults are fine.
   <CategoryFilter />
   <TitleViewer />
     <TitleCard />
-      <TopNoSoLong />
-      <OtherNoSoLongList />
-        <NoSoLongItem />
+      <TopRecap />
+      <OtherRecapList />
+        <RecapItem />
       <AddMineButtons />
     <NavigationButtons />
-  <AddNoSoLongDialog />
+  <AddRecapDialog />
   <NewTitleDialog />
   <AuthDialog />
 <AuthContextProvider />
@@ -299,8 +299,8 @@ JWT defaults are fine.
 1. User sees one Title at a time:
 
    * Big Title
-   * Top NoSoLong
-   * 3 random NoSoLongs (dimmed)
+   * Top Recap
+   * 3 random Recaps (dimmed)
    * Thumbs up/down
    * “+ Add mine”
 2. Forward/back buttons (or swipe)
@@ -338,13 +338,13 @@ If user is **not logged in** and taps:
 
   * revert optimistic score
   * toast: “Couldn’t save your vote”
-* Adding NoSoLong failure:
+* Adding Recap failure:
 
   * keep text in dialog
-  * toast: “Error saving your NoSoLong”
+  * toast: “Error saving your Recap”
 * Empty state:
 
-  * No NoSoLongs → show “Be the first to add one”
+  * No Recaps → show “Be the first to add one”
 
 ---
 
@@ -382,12 +382,12 @@ urlpatterns = [
 
 ```python
 from rest_framework.routers import DefaultRouter
-from .views import TitleViewSet, NoSoLongViewSet
+from .views import TitleViewSet, RecapViewSet
 from django.urls import path, include
 
 router = DefaultRouter()
 router.register("titles", TitleViewSet, basename="titles")
-router.register("nosolongs", NoSoLongViewSet, basename="nosolongs")
+router.register("recaps", RecapViewSet, basename="recaps")
 
 urlpatterns = [
     path("", include(router.urls)),
@@ -417,7 +417,7 @@ urlpatterns = [
 
 ### **Phase 1 (MVP)**
 
-* Titles + NoSoLongs + votes
+* Titles + Recaps + votes
 * Random title flow
 * Auth (JWT)
 * Add mine
@@ -426,7 +426,7 @@ urlpatterns = [
 
 ### **Phase 2**
 
-* Edit/delete own NoSoLongs
+* Edit/delete own Recaps
 * Search Titles
 * Infinite feed
 * Tags

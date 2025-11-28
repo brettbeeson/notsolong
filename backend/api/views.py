@@ -8,11 +8,11 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from .models import NoSoLong, Title, TitleCategory, Vote
+from .models import Recap, Title, TitleCategory, Vote
 from .serializers import (
-    NoSoLongCreateSerializer,
-    NoSoLongUpdateSerializer,
-    NoSoLongSerializer,
+    RecapCreateSerializer,
+    RecapUpdateSerializer,
+    RecapSerializer,
     TitleSerializer,
     TitleSummarySerializer,
     VoteSerializer,
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 class TitleViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """Manage Titles and provide custom random/summary views."""
 
-    queryset = Title.objects.prefetch_related("nosolongs__user", "nosolongs__title")
+    queryset = Title.objects.prefetch_related("recaps__user", "recaps__title")
     serializer_class = TitleSerializer
 
     def get_permissions(self):
@@ -77,40 +77,38 @@ class TitleViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewsets.
         return queryset
 
     def _build_summary(self, title: Title) -> dict[str, Any]:
-        nosolongs = self._annotate_with_vote(title.nosolongs.select_related("user", "title"))
-        top = nosolongs.order_by("-score", "-created_at").first()
-        others = (
-            nosolongs.exclude(pk=getattr(top, "pk", None)).order_by("?")[:3] if top else nosolongs.order_by("?")[:3]
-        )
+        recaps = self._annotate_with_vote(title.recaps.select_related("user", "title"))
+        top = recaps.order_by("-score", "-created_at").first()
+        others = recaps.exclude(pk=getattr(top, "pk", None)).order_by("?")[:3] if top else recaps.order_by("?")[:3]
         serializer = TitleSummarySerializer(
             {
                 "title": title,
-                "top_nosolong": top,
-                "other_nosolongs": list(others),
+                "top_recap": top,
+                "other_recaps": list(others),
             },
             context={"request": self.request},
         )
         return serializer.data
 
-    def _annotate_with_vote(self, queryset: QuerySet[NoSoLong]) -> QuerySet[NoSoLong]:
+    def _annotate_with_vote(self, queryset: QuerySet[Recap]) -> QuerySet[Recap]:
         user = getattr(self.request, "user", None)
         if user and user.is_authenticated:
-            vote_subquery = Vote.objects.filter(quote=OuterRef("pk"), user=user).values("value")[:1]
+            vote_subquery = Vote.objects.filter(recap=OuterRef("pk"), user=user).values("value")[:1]
             return queryset.annotate(current_user_vote=Subquery(vote_subquery))
         return queryset
 
 
-class NoSoLongViewSet(
+class RecapViewSet(
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
-    """Create NoSoLong quotes and manage votes."""
+    """Create Recap quotes and manage votes."""
 
-    queryset = NoSoLong.objects.select_related("title", "user")
-    serializer_class = NoSoLongSerializer
+    queryset = Recap.objects.select_related("title", "user")
+    serializer_class = RecapSerializer
 
     def get_permissions(self):
         if self.action in {"create", "vote", "update", "partial_update", "destroy"}:
@@ -121,29 +119,29 @@ class NoSoLongViewSet(
         queryset = super().get_queryset()
         user = getattr(self.request, "user", None)
         if user and user.is_authenticated:
-            vote_subquery = Vote.objects.filter(quote=OuterRef("pk"), user=user).values("value")[:1]
+            vote_subquery = Vote.objects.filter(recap=OuterRef("pk"), user=user).values("value")[:1]
             queryset = queryset.annotate(current_user_vote=Subquery(vote_subquery))
         return queryset
 
     def get_serializer_class(self):
         if self.action == "create":
-            return NoSoLongCreateSerializer
+            return RecapCreateSerializer
         if self.action in {"update", "partial_update"}:
-            return NoSoLongUpdateSerializer
+            return RecapUpdateSerializer
         return super().get_serializer_class()
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        logger.debug(f"Creating NoSoLong with data: {request.data}")
+        logger.debug(f"Creating Recap with data: {request.data}")
         serializer.is_valid(raise_exception=True)
         try:
-            nosolong = serializer.save(user=request.user)
+            recap = serializer.save(user=request.user)
         except IntegrityError as exc:
             message = str(exc)
-            if "unique_title_user_nosolong" in message:
+            if "unique_title_user_nosolong" in message or "unique_title_user_recap" in message:
                 raise ValidationError({"title": "You already have a recap for this title."}) from exc
             raise ValidationError({"title": "Invalid or missing title."}) from exc
-        output = NoSoLongSerializer(nosolong, context={"request": request})
+        output = RecapSerializer(recap, context={"request": request})
         headers = self.get_success_headers(output.data)
         return Response(output.data, status=status.HTTP_201_CREATED, headers=headers)
 
@@ -159,10 +157,10 @@ class NoSoLongViewSet(
 
     @action(detail=True, methods=["post"], url_path="vote", permission_classes=[IsAuthenticated])
     def vote(self, request, pk=None):
-        nosolong = self.get_object()
+        recap = self.get_object()
         serializer = VoteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         value = serializer.validated_data["value"]
-        VoteService.apply_vote(nosolong, request.user, value)
-        updated = self.get_queryset().get(pk=nosolong.pk)
-        return Response(NoSoLongSerializer(updated, context={"request": request}).data, status=status.HTTP_200_OK)
+        VoteService.apply_vote(recap, request.user, value)
+        updated = self.get_queryset().get(pk=recap.pk)
+        return Response(RecapSerializer(updated, context={"request": request}).data, status=status.HTTP_200_OK)

@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.models import User
-from api.models import NoSoLong, Title, TitleCategory
+from api.models import Recap, Title, TitleCategory
 
 
 class TitleEndpointsTests(APITestCase):
@@ -19,14 +19,14 @@ class TitleEndpointsTests(APITestCase):
             author="Wachowski",
             created_by=self.user,
         )
-        NoSoLong.objects.create(title=self.title, user=self.user, text="There is no spoon.")
+        Recap.objects.create(title=self.title, user=self.user, text="There is no spoon.")
 
     def test_random_endpoint_returns_bundle(self):
         response = self.client.get(reverse("titles-random"))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("title", response.data)
-        self.assertIn("top_nosolong", response.data)
-        self.assertIn("other_nosolongs", response.data)
+        self.assertIn("top_recap", response.data)
+        self.assertIn("other_recaps", response.data)
 
 
 class VoteEndpointTests(APITestCase):
@@ -47,7 +47,7 @@ class VoteEndpointTests(APITestCase):
             author="George Orwell",
             created_by=self.author,
         )
-        self.nosolong = NoSoLong.objects.create(
+        self.recap = Recap.objects.create(
             title=self.title,
             user=self.author,
             text="Big Brother is watching you.",
@@ -55,20 +55,20 @@ class VoteEndpointTests(APITestCase):
 
     def test_vote_cycle_updates_score(self):
         self.client.force_authenticate(user=self.user)
-        url = reverse("nosolongs-vote", args=[self.nosolong.pk])
+        url = reverse("recaps-vote", args=[self.recap.pk])
 
         upvote = self.client.post(url, {"value": 1}, format="json")
         self.assertEqual(upvote.status_code, status.HTTP_200_OK)
-        self.nosolong.refresh_from_db()
-        self.assertEqual(self.nosolong.score, 1)
+        self.recap.refresh_from_db()
+        self.assertEqual(self.recap.score, 1)
 
         remove = self.client.post(url, {"value": 0}, format="json")
         self.assertEqual(remove.status_code, status.HTTP_200_OK)
-        self.nosolong.refresh_from_db()
-        self.assertEqual(self.nosolong.score, 0)
+        self.recap.refresh_from_db()
+        self.assertEqual(self.recap.score, 0)
 
 
-class NoSoLongCreateTests(APITestCase):
+class RecapCreateTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(
             email="authorseed@example.com",
@@ -85,7 +85,7 @@ class NoSoLongCreateTests(APITestCase):
     def test_invalid_title_returns_400(self):
         self.client.force_authenticate(user=self.user)
         response = self.client.post(
-            reverse("nosolongs-list"),
+            reverse("recaps-list"),
             {"title": self.title.pk + 100, "text": "Fear is the mind-killer."},
             format="json",
         )

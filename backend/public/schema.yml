@@ -72,15 +72,15 @@ paths:
           description: ''
       tags:
       - api
-  /api/nosolongs/{id}/:
+  /api/recaps/{id}/:
     get:
-      operationId: retrieveNoSoLong
-      description: Create NoSoLong quotes and manage votes.
+      operationId: retrieveRecap
+      description: Create Recap quotes and manage votes.
       parameters:
       - name: id
         in: path
         required: true
-        description: A unique integer value identifying this no so long.
+        description: A unique integer value identifying this recap.
         schema:
           type: string
       responses:
@@ -88,78 +88,78 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NoSoLong'
+                $ref: '#/components/schemas/Recap'
           description: ''
       tags:
       - api
     put:
-      operationId: updateNoSoLong
-      description: Create NoSoLong quotes and manage votes.
+      operationId: updateRecap
+      description: Create Recap quotes and manage votes.
       parameters:
       - name: id
         in: path
         required: true
-        description: A unique integer value identifying this no so long.
+        description: A unique integer value identifying this recap.
         schema:
           type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NoSoLongUpdate'
+              $ref: '#/components/schemas/RecapUpdate'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/NoSoLongUpdate'
+              $ref: '#/components/schemas/RecapUpdate'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/NoSoLongUpdate'
+              $ref: '#/components/schemas/RecapUpdate'
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NoSoLongUpdate'
+                $ref: '#/components/schemas/RecapUpdate'
           description: ''
       tags:
       - api
     patch:
-      operationId: partialUpdateNoSoLong
-      description: Create NoSoLong quotes and manage votes.
+      operationId: partialUpdateRecap
+      description: Create Recap quotes and manage votes.
       parameters:
       - name: id
         in: path
         required: true
-        description: A unique integer value identifying this no so long.
+        description: A unique integer value identifying this recap.
         schema:
           type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NoSoLongUpdate'
+              $ref: '#/components/schemas/RecapUpdate'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/NoSoLongUpdate'
+              $ref: '#/components/schemas/RecapUpdate'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/NoSoLongUpdate'
+              $ref: '#/components/schemas/RecapUpdate'
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NoSoLongUpdate'
+                $ref: '#/components/schemas/RecapUpdate'
           description: ''
       tags:
       - api
     delete:
-      operationId: destroyNoSoLong
-      description: Create NoSoLong quotes and manage votes.
+      operationId: destroyRecap
+      description: Create Recap quotes and manage votes.
       parameters:
       - name: id
         in: path
         required: true
-        description: A unique integer value identifying this no so long.
+        description: A unique integer value identifying this recap.
         schema:
           type: string
       responses:
@@ -269,59 +269,59 @@ paths:
           description: ''
       tags:
       - api
-  /api/nosolongs/:
+  /api/recaps/:
     post:
-      operationId: createNoSoLong
-      description: Create NoSoLong quotes and manage votes.
+      operationId: createRecap
+      description: Create Recap quotes and manage votes.
       parameters: []
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NoSoLongCreate'
+              $ref: '#/components/schemas/RecapCreate'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/NoSoLongCreate'
+              $ref: '#/components/schemas/RecapCreate'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/NoSoLongCreate'
+              $ref: '#/components/schemas/RecapCreate'
       responses:
         '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NoSoLongCreate'
+                $ref: '#/components/schemas/RecapCreate'
           description: ''
       tags:
       - api
-  /api/nosolongs/{id}/vote/:
+  /api/recaps/{id}/vote/:
     post:
-      operationId: voteNoSoLong
-      description: Create NoSoLong quotes and manage votes.
+      operationId: voteRecap
+      description: Create Recap quotes and manage votes.
       parameters:
       - name: id
         in: path
         required: true
-        description: A unique integer value identifying this no so long.
+        description: A unique integer value identifying this recap.
         schema:
           type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NoSoLong'
+              $ref: '#/components/schemas/Recap'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/NoSoLong'
+              $ref: '#/components/schemas/Recap'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/NoSoLong'
+              $ref: '#/components/schemas/Recap'
       responses:
         '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NoSoLong'
+                $ref: '#/components/schemas/Recap'
           description: ''
       tags:
       - api
@@ -356,7 +356,7 @@ components:
       required:
       - name
       - category
-    NoSoLong:
+    Recap:
       type: object
       properties:
         id:
@@ -449,7 +449,7 @@ components:
           readOnly: true
       required:
       - refresh
-    NoSoLongCreate:
+    RecapCreate:
       type: object
       properties:
         title:
@@ -459,7 +459,7 @@ components:
       required:
       - title
       - text
-    NoSoLongUpdate:
+    RecapUpdate:
       type: object
       properties:
         text:
