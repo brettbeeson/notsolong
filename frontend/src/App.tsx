@@ -23,6 +23,7 @@ import { useAuth } from "./hooks/useAuth";
 import { useHistoryStore } from "./store/useHistoryStore";
 import type { Recap, TitleBundle, TitleCategory } from "./types/api";
 import { getErrorMessage } from "./utils/errors";
+import logoUrl from "./assets/favicon.ico";
 
 const detectSwipeCapability = () => {
   if (typeof window === "undefined") {
@@ -375,10 +376,10 @@ function App() {
     <div className="app-shell">
       <header className="app-header">
         
-          <a href="/"><img className="app-logo" src="/favicon.ico" alt="Not So Long logo" /></a>
+          <a href="/"><img className="app-logo" src={logoUrl} alt="Not So Long logo" /></a>
           <div className="app-title-group">
             <h1 className="app-title">Not So Long</h1>
-            <p className="tagline">Find the recap which is as short as possible, but not shorter!</p>
+            <p className="tagline">Find the best recap: as short as possible, but no shorter!</p>
           </div>
         <div className="auth-actions">
           {user ? (

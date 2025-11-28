@@ -19,7 +19,7 @@ REMOTE_IMAGE_PATH := /tmp/notsolong-images.tar
 help:
 	
 	@echo "Build and deployment"
-	@echo "  podman-ship        - Copy to $(REMOTE_HOST) and start service"
+	@echo "  deploy        		- Copy to $(REMOTE_HOST) and start service"
 	@echo "Local commands:"
 	@echo "  podman-build       - Build container images"
 	@echo "  podman-up          - Start the Podman pod"
@@ -49,7 +49,7 @@ podman-seed:
 	$(COMPOSE) exec web python manage.py createuser
 	$(COMPOSE) exec web python manage.py seed --force
 
-podman-ship:  podman-build
+deploy:  podman-build
 	@echo "Exporting compose image/s to $(EXPORT_TAR)"
 	@mkdir -p $(dir $(EXPORT_TAR))
 	@rm -f $(EXPORT_TAR) || true  # don't fail if the file doesn't exist

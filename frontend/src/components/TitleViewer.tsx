@@ -93,7 +93,7 @@ const TitleViewer = ({
             <p>No recaps yet!</p>
             {canAddRecap && (
               <button className="primary" onClick={handlePrimaryCta}>
-                Add your recap
+                Add your own
               </button>
             )}
           </div>
