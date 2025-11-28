@@ -1,10 +1,19 @@
-import { useState } from "react";
-import type { FormEvent } from "react";
+import { useState, type FormEvent } from "react";
+import {
+  Alert,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  MenuItem,
+  TextField,
+} from "@mui/material";
 
 import { createTitle, fetchTitleSummary } from "../api/endpoints";
 import type { Title, TitleBundle, TitleCategory } from "../types/api";
 import { getErrorMessage } from "../utils/errors";
-import { Modal } from "./Modal";
 
 const categories: { label: string; value: TitleCategory }[] = [
   { label: "Book", value: "book" },
@@ -46,32 +55,39 @@ const NewTitleDialog = ({ open, onClose, onCreated }: NewTitleDialogProps) => {
   };
 
   return (
-    <Modal open={open} title="Add a new Title" onClose={onClose}>
-      <form className="form" onSubmit={handleSubmit}>
-        <label>
-          Name
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
-        </label>
-        <label>
-          Category
-          <select value={category} onChange={(e) => setCategory(e.target.value as TitleCategory)}>
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" component="form" onSubmit={handleSubmit}>
+      <DialogTitle>Add a new Title</DialogTitle>
+      <DialogContent dividers>
+        <Box display="flex" flexDirection="column" gap={2} mt={1}>
+          <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
+          <TextField
+            label="Category"
+            select
+            value={category}
+            onChange={(e) => setCategory(e.target.value as TitleCategory)}
+          >
             {categories.map((option) => (
-              <option key={option.value} value={option.value}>
+              <MenuItem key={option.value} value={option.value}>
                 {option.label}
-              </option>
+              </MenuItem>
             ))}
-          </select>
-        </label>
-        <label>
-          Author / Creator
-          <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="Optional" />
-        </label>
-        {error && <p className="error">{error}</p>}
-        <button type="submit" className="primary" disabled={loading}>
+          </TextField>
+          <TextField
+            label="Author / Creator"
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+            placeholder="Optional"
+          />
+          {error && <Alert severity="error">{error}</Alert>}
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button type="submit" variant="contained" disabled={loading}>
           {loading ? "Saving..." : "Create Title"}
-        </button>
-      </form>
-    </Modal>
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
 

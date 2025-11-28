@@ -1,3 +1,16 @@
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import EmojiEventsRoundedIcon from "@mui/icons-material/EmojiEventsRounded";
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
+
 import type { Recap, TitleBundle } from "../types/api";
 import RecapCard from "./RecapCard";
 
@@ -25,14 +38,19 @@ const TitleViewer = ({
   onDeleteRecap,
 }: TitleViewerProps) => {
   if (loading) {
-    return <div className="panel">Loading a fresh Title...</div>;
+    return (
+      <Paper sx={{ p: 4, textAlign: "center" }}>
+        <CircularProgress color="primary" />
+        <Typography mt={2}>Loading a fresh Title...</Typography>
+      </Paper>
+    );
   }
 
   if (!bundle) {
     return (
-      <div className="panel empty-state">
-        <p>No Titles yet. Be the first to add one!</p>
-      </div>
+      <Paper sx={{ p: 4 }}>
+        <Typography>No Titles yet. Be the first to add one!</Typography>
+      </Paper>
     );
   }
 
@@ -54,52 +72,60 @@ const TitleViewer = ({
   };
 
   return (
-    <section className="panel title-viewer">
-      <header className="title-header">
-        <div className="title-header-copy">
-          <p className="category">{title.category.toUpperCase()}</p>
-          <div className="title-heading">
-            <h1>{title.name}</h1>
-          </div>
-          {authorName && <p className="author">by {authorName}</p>}
-        </div>
-      </header>
-      <div className="title-recaps">
+    <Paper sx={{ p: { xs: 3, md: 4 } }}>
+      <Stack spacing={1.5} mb={3}>
+        <Chip label={title.category.toUpperCase()} color="primary" variant="outlined" sx={{ width: "fit-content" }} />
+        <Typography variant="h4" fontWeight={700} color="text.primary">
+          {title.name}
+        </Typography>
+        {authorName && (
+          <Typography variant="subtitle1" color="text.secondary">
+            by {authorName}
+          </Typography>
+        )}
+      </Stack>
+
+      <Stack spacing={3}>
         {top_recap ? (
-          <>
-            <div className="top-recap-stack">
-              {userOwnsTop && <p className="top-recap-toast">Your recap is the best!</p>}
-              <RecapCard
-                quote={top_recap}
-                highlight
-                owned={userQuote?.id === top_recap.id}
-                onVote={onVote}
-                disabled={voteDisabledFor === top_recap.id}
-                userVoteOverride={userVotes[top_recap.id] ?? null}
-                onEdit={onEditRecap}
-                onDelete={onDeleteRecap}
-              />
-            </div>
-            {canAddRecap && (
-              <div className="add-recap-inline">
-                <button className="primary" onClick={handlePrimaryCta}>
-                  Add your own
-                </button>
-              </div>
+          <Stack spacing={2}>
+            {userOwnsTop && (
+              <Alert icon={<EmojiEventsRoundedIcon fontSize="small" />} severity="success">
+                Your recap is the best!
+              </Alert>
             )}
-          </>
+            <RecapCard
+              quote={top_recap}
+              highlight
+              owned={userQuote?.id === top_recap.id}
+              onVote={onVote}
+              disabled={voteDisabledFor === top_recap.id}
+              userVoteOverride={userVotes[top_recap.id] ?? null}
+              onEdit={onEditRecap}
+              onDelete={onDeleteRecap}
+            />
+            {canAddRecap && (
+              <Button
+                startIcon={<AddRoundedIcon />}
+                variant="contained"
+                onClick={handlePrimaryCta}
+                sx={{ alignSelf: "flex-start" }}
+              >
+                {userQuote ? "Edit your recap" : "Add your own"}
+              </Button>
+            )}
+          </Stack>
         ) : (
-          <div className="empty-state">
-            <p>No recaps yet!</p>
+          <Box textAlign="center" py={4}>
+            <Typography>No recaps yet!</Typography>
             {canAddRecap && (
-              <button className="primary" onClick={handlePrimaryCta}>
+              <Button startIcon={<AddRoundedIcon />} variant="contained" sx={{ mt: 2 }} onClick={handlePrimaryCta}>
                 Add your own
-              </button>
+              </Button>
             )}
-          </div>
+          </Box>
         )}
 
-        <div className="other-list">
+        <Stack spacing={2}>
           {other_recaps.map((item) => (
             <RecapCard
               key={item.id}
@@ -112,10 +138,9 @@ const TitleViewer = ({
               onDelete={onDeleteRecap}
             />
           ))}
-          
-        </div>
-      </div>
-    </section>
+        </Stack>
+      </Stack>
+    </Paper>
   );
 };
 

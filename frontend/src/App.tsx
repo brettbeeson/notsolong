@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
+import { Box, Stack, useMediaQuery, useTheme } from "@mui/material";
 
 import "./App.css";
 import {
@@ -38,6 +39,8 @@ const detectSwipeCapability = () => {
 };
 
 function App() {
+  const theme = useTheme();
+  const isDesktopNavVisible = useMediaQuery(theme.breakpoints.up("md"));
   const { user, logout, updateProfile } = useAuth();
   const historyIndex = useHistoryStore((state) => state.index);
   const historyItems = useHistoryStore((state) => state.items);
@@ -371,6 +374,8 @@ function App() {
   const closeMobileMenu = () => setMobileMenuOpen(false);
   const disableBackNav = !bundle || !canGoBack || loading;
   const disableNextNav = !bundle || loading || (!canGoForward && isForwardExhausted);
+  const isOverlayOpen =
+    isMobileMenuOpen || isRecapDialogOpen || isAddTitleOpen || isAuthOpen || isAccountOpen;
   
   return (
     <div className="app-shell">
@@ -419,20 +424,25 @@ function App() {
         onCategoryChange={handleCategoryChange}
       />
 
-      <div className="category-filter-desktop">
-        <div className="filter-bar">
-          <CategoryFilter
-            value={category}
-            onChange={handleCategoryChange}
-          />
-          <DesktopNavigation
-            onBack={handleBack}
-            onNext={handleNext}
-            disableBack={disableBackNav}
-            disableNext={disableNextNav}
-          />
-        </div>
-      </div>
+      <Box className="category-filter-desktop">
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          spacing={2}
+          alignItems={{ md: "center" }}
+        >
+          <Box flexGrow={1} minWidth={0}>
+            <CategoryFilter value={category} onChange={handleCategoryChange} />
+          </Box>
+          <Box flexShrink={0} ml={{ md: "auto" }}>
+            <DesktopNavigation
+              onBack={handleBack}
+              onNext={handleNext}
+              disableBack={disableBackNav}
+              disableNext={disableNextNav}
+            />
+          </Box>
+        </Stack>
+      </Box>
 
       {error && <div className="error-banner">{error}</div>}
 
@@ -460,12 +470,14 @@ function App() {
         </div>
       </div>
 
-      <BottomBar
-        onBack={handleBack}
-        onNext={handleNext}
-        disableBack={disableBackNav}
-        disableNext={disableNextNav}
-      />
+      {!isDesktopNavVisible && !isOverlayOpen && (
+        <BottomBar
+          onBack={handleBack}
+          onNext={handleNext}
+          disableBack={disableBackNav}
+          disableNext={disableNextNav}
+        />
+      )}
 
       <AddRecapDialog
         open={isRecapDialogOpen}

@@ -1,10 +1,19 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+import {
+  Alert,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+} from "@mui/material";
 
 import type { User } from "../types/api";
 import { getDisplayName } from "../utils/user";
 import { getErrorMessage } from "../utils/errors";
-import { Modal } from "./Modal";
 
 interface AccountPanelProps {
   open: boolean;
@@ -32,6 +41,7 @@ const AccountPanel = ({ open, user, onClose, onSave }: AccountPanelProps) => {
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (!user) return;
     setStatus("saving");
     setError(null);
     try {
@@ -53,41 +63,40 @@ const AccountPanel = ({ open, user, onClose, onSave }: AccountPanelProps) => {
   }
 
   return (
-    <Modal open={open} title={`Account • ${getDisplayName(user)}`} onClose={handleClose}>
-      <form className="account-form form" onSubmit={handleSubmit}>
-        <label>
-          Display name
-          <input
-            value={displayName}
-            onChange={(e) => {
-              setDisplayName(e.target.value);
-              markDirty();
-            }}
-            placeholder="Add a name"
-          />
-        </label>
-
-        <label>
-          Email
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              markDirty();
-            }}
-            required
-          />
-        </label>
-
-        {error && <p className="error">{error}</p>}
-        <div className="account-form-actions">
-          <button type="submit" className="primary" disabled={status === "saving"}>
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+      <Box component="form" onSubmit={handleSubmit} display="flex" flexDirection="column">
+        <DialogTitle>{`Account • ${getDisplayName(user)}`}</DialogTitle>
+        <DialogContent>
+          <Box display="flex" flexDirection="column" gap={2} mt={1}>
+            <TextField
+              label="Display name"
+              value={displayName}
+              onChange={(e) => {
+                setDisplayName(e.target.value);
+                markDirty();
+              }}
+              placeholder="Add a name"
+            />
+            <TextField
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                markDirty();
+              }}
+              required
+            />
+            {error && <Alert severity="error">{error}</Alert>}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button type="submit" variant="contained" disabled={status === "saving"}>
             {status === "saving" ? "Saving..." : "Save changes"}
-          </button>
-        </div>
-      </form>
-    </Modal>
+          </Button>
+        </DialogActions>
+      </Box>
+    </Dialog>
   );
 };
 

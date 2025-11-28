@@ -1,3 +1,18 @@
+import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+import EditRoundedIcon from "@mui/icons-material/EditRounded";
+import ThumbDownAltRoundedIcon from "@mui/icons-material/ThumbDownAltRounded";
+import ThumbUpAltRoundedIcon from "@mui/icons-material/ThumbUpAltRounded";
+import {
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  Chip,
+  Stack,
+  Typography,
+  useTheme,
+} from "@mui/material";
+
 import type { Recap } from "../types/api";
 import { getDisplayName } from "../utils/user";
 
@@ -22,16 +37,9 @@ const RecapCard = ({
   onEdit,
   onDelete,
 }: RecapCardProps) => {
+  const theme = useTheme();
   const serverVote = quote.current_user_vote ?? null;
   const displayVote = userVoteOverride ?? serverVote ?? null;
-
-  const voteButtonClass = (direction: "up" | "down") => {
-    const classes = [direction === "up" ? "vote-button vote-button-up" : "vote-button vote-button-down"];
-    if ((direction === "up" && displayVote === 1) || (direction === "down" && displayVote === -1)) {
-      classes.push("vote-button-active");
-    }
-    return classes.join(" ");
-  };
 
   const submitVote = (value: -1 | 0 | 1) => {
     if (disabled) return;
@@ -43,67 +51,62 @@ const RecapCard = ({
     submitVote(nextValue);
   };
 
-  const handleEdit = () => {
-    onEdit?.(quote);
-  };
-
-  const handleDelete = () => {
-    onDelete?.(quote);
-  };
-
-  const cardClassNames = ["quote-card"];
-  if (highlight) {
-    cardClassNames.push("highlight");
-  }
-  if (owned) {
-    cardClassNames.push("quote-card-owned");
-  }
-
-  
-
   return (
-    <article className={cardClassNames.join(" ")}>
-      
-      <p className="quote-text">“{quote.text}”</p>
-      <div className="quote-meta">
-        <span>— {getDisplayName(quote.user)}</span>
-        {owned && <span className="quote-badge">Your recap</span>}
-      </div>
-      <div className="vote-controls">
-        <button
-          className={voteButtonClass("up")}
-          onClick={() => handleVoteToggle(1)}
-          disabled={disabled}
-          aria-pressed={displayVote === 1}
-        >
-          <span className="vote-icon-large" aria-hidden="true">
-            👍
-          </span>
-          <span className="vote-button-count">{quote.upvotes}</span>
-        </button>
-        <button
-          className={voteButtonClass("down")}
-          onClick={() => handleVoteToggle(-1)}
-          disabled={disabled}
-          aria-pressed={displayVote === -1}
-        >
-          <span className="vote-icon-large" aria-hidden="true">
-            👎
-          </span>
-          <span className="vote-button-count">{quote.downvotes}</span>
-        </button>
-      </div>
-      {owned && (
-        <div className="owner-actions">
-          <button type="button" className="ghost-button" onClick={handleEdit}>
-            Edit recap
-          </button>
-          <button type="button" className="ghost-button ghost-button-danger" onClick={handleDelete}>
-            Delete recap
-          </button>
-        </div>
-      )}
-    </article>
+    <Card
+      variant={highlight ? "outlined" : undefined}
+      sx={{
+        borderColor: highlight ? theme.palette.primary.main : undefined,
+        backgroundColor: highlight ? "rgba(63, 42, 252, 0.05)" : undefined,
+      }}
+    >
+      <CardContent>
+        <Typography variant="h6" gutterBottom>
+          “{quote.text}”
+        </Typography>
+        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+          <Typography variant="subtitle2" color="text.secondary">
+            — {getDisplayName(quote.user)}
+          </Typography>
+          {owned && <Chip size="small" color="secondary" label="Your recap" />}
+        </Stack>
+      </CardContent>
+      <CardActions sx={{ justifyContent: "space-between", flexWrap: "wrap", gap: 1.5, px: 3, pb: 3 }}>
+        <Stack direction="row" spacing={1} flexWrap="wrap">
+          <Button
+            variant={displayVote === 1 ? "contained" : "outlined"}
+            startIcon={<ThumbUpAltRoundedIcon />}
+            onClick={() => handleVoteToggle(1)}
+            disabled={disabled}
+          >
+            {quote.upvotes}
+          </Button>
+          <Button
+            variant={displayVote === -1 ? "contained" : "outlined"}
+            color="error"
+            startIcon={<ThumbDownAltRoundedIcon />}
+            onClick={() => handleVoteToggle(-1)}
+            disabled={disabled}
+          >
+            {quote.downvotes}
+          </Button>
+        </Stack>
+        {owned && (
+          <Stack direction="row" spacing={1} flexWrap="wrap">
+            <Button variant="text" startIcon={<EditRoundedIcon />} onClick={() => onEdit?.(quote)}>
+              Edit
+            </Button>
+            <Button
+              variant="text"
+              color="error"
+              startIcon={<DeleteOutlineRoundedIcon />}
+              onClick={() => onDelete?.(quote)}
+            >
+              Delete
+            </Button>
+          </Stack>
+        )}
+      </CardActions>
+    </Card>
   );
 };
 

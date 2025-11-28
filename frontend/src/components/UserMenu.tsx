@@ -1,4 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
+import {
+  Avatar,
+  Box,
+  Divider,
+  IconButton,
+  Menu,
+  MenuItem,
+  Typography,
+} from "@mui/material";
+import { useState } from "react";
 
 import type { User } from "../types/api";
 import { getDisplayName } from "../utils/user";
@@ -11,90 +21,68 @@ interface UserMenuProps {
 }
 
 const UserMenu = ({ user, onAccount, onLogout, onAddTitle }: UserMenuProps) => {
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
 
-  useEffect(() => {
-    const handleClick = (event: MouseEvent) => {
-      if (!open) return;
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("keydown", handleEscape);
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [open]);
+  const handleClose = () => setAnchorEl(null);
 
   return (
-    <div className="user-menu" ref={menuRef}>
-      <button
-        type="button"
-        className="user-menu-button"
-        onClick={() => setOpen((prev) => !prev)}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label="Open menu"
+    <>
+      <IconButton
+        color="primary"
+        onClick={(event) => setAnchorEl(event.currentTarget)}
+        aria-label="Open user menu"
       >
-        <span />
-        <span />
-        <span />
-      </button>
-      {open && (
-        <div className="user-menu-popover" role="menu">
-          <div className="user-menu-section">
-            <p className="user-menu-subheading">Account</p>
-            <p className="user-menu-name">{getDisplayName(user)}</p>
-            {user.email && <p className="user-menu-email">{user.email}</p>}
-            <div className="user-menu-actions">
-              <button
-                type="button"
-                className="primary button-medium"
-                onClick={() => {
-                  setOpen(false);
-                  onAccount();
-                }}
-              >
-                Account settings
-              </button>
-              <button
-                type="button"
-                className="ghost-button button-medium"
-                onClick={() => {
-                  setOpen(false);
-                  onLogout();
-                }}
-              >
-                Log out
-              </button>
-            </div>
-          </div>
-          <div className="user-menu-section">
-            <p className="user-menu-subheading">Titles</p>
-            <button
-              type="button"
-              className="primary button-medium"
-              onClick={() => {
-                setOpen(false);
-                onAddTitle();
-              }}
-            >
-              Add a Title
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+        <MenuRoundedIcon />
+      </IconButton>
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Box px={2} py={1.5} display="flex" gap={2} alignItems="center">
+          <Avatar>{getDisplayName(user).charAt(0)}</Avatar>
+          <Box>
+            <Typography fontWeight={600}>{getDisplayName(user)}</Typography>
+            {user.email && (
+              <Typography variant="body2" color="text.secondary">
+                {user.email}
+              </Typography>
+            )}
+          </Box>
+        </Box>
+        <Divider sx={{ my: 1 }} />
+        <MenuItem
+          onClick={() => {
+            handleClose();
+            onAccount();
+          }}
+        >
+          Add a Title
+        </MenuItem>
+        <Divider sx={{ my: 1 }} />
+        <MenuItem
+          onClick={() => {
+            handleClose();
+            onLogout();
+          }}
+        >
+          Account settings
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            handleClose();
+            onAddTitle();
+          }}
+        >
+          
+          Log out
+        </MenuItem>
+        
+      </Menu>
+    </>
   );
 };
 

@@ -1,10 +1,18 @@
-import { useEffect, useState } from "react";
-import type { FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import {
+  Alert,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+} from "@mui/material";
 
 import { createRecap, updateRecap } from "../api/endpoints";
 import type { Recap, Title } from "../types/api";
 import { getErrorMessage } from "../utils/errors";
-import { Modal } from "./Modal";
 
 interface AddRecapDialogProps {
   open: boolean;
@@ -55,19 +63,32 @@ const AddRecapDialog = ({ open, title, existingQuote, onClose, onCreated }: AddR
       : "Add a recap";
 
   return (
-    <Modal open={open} title={modalTitle} onClose={onClose}>
-      <form className="form" onSubmit={handleSubmit}>
-        <label>
-          Text
-          <textarea value={text} onChange={(e) => setText(e.target.value)} required rows={4} />
-        </label>
-        {isEditing && <p className="muted">Updating this text will replace your existing recap.</p>}
-        {error && <p className="error">{error}</p>}
-        <button type="submit" className="primary" disabled={loading}>
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" component="form" onSubmit={handleSubmit}>
+      <DialogTitle>{modalTitle}</DialogTitle>
+      <DialogContent dividers>
+        <Box display="flex" flexDirection="column" gap={2} mt={1}>
+          <TextField
+            label="Recap"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            required
+            multiline
+            minRows={4}
+            autoFocus
+          />
+          {isEditing && (
+            <Alert severity="info">Updating this text will replace your existing recap.</Alert>
+          )}
+          {error && <Alert severity="error">{error}</Alert>}
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button type="submit" variant="contained" disabled={loading}>
           {loading ? "Saving..." : isEditing ? "Save Changes" : "Save"}
-        </button>
-      </form>
-    </Modal>
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
 

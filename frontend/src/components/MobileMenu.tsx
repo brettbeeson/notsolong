@@ -1,3 +1,14 @@
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import {
+  Box,
+  Button,
+  Divider,
+  Drawer,
+  IconButton,
+  Stack,
+  Typography,
+} from "@mui/material";
+
 import type { TitleCategory, User } from "../types/api";
 import { getDisplayName } from "../utils/user";
 import CategoryFilter from "./CategoryFilter";
@@ -28,73 +39,86 @@ const MobileMenu = ({
   const mobileAccountName = user ? getDisplayName(user) : "";
 
   return (
-    <div
-      className={isOpen ? "mobile-menu-overlay mobile-menu-open" : "mobile-menu-overlay"}
-      aria-hidden={!isOpen}
-      onClick={onClose}
-    >
-      <div className="mobile-menu-panel" onClick={(event) => event.stopPropagation()}>
-        <button type="button" className="mobile-menu-close" aria-label="Close menu" onClick={onClose}>
-          ×
-        </button>
-        
-        {user ? (
-          <div className="mobile-menu-section">
-            <p className="mobile-menu-subheading">Titles</p>
-            <button
-              className="primary button-medium"
+    <Drawer anchor="right" open={isOpen} onClose={onClose} PaperProps={{ sx: { width: 360, maxWidth: "100%" } }}>
+      <Box display="flex" justifyContent="flex-end" px={1} pt={1}>
+        <IconButton aria-label="Close menu" onClick={onClose}>
+          <CloseRoundedIcon />
+        </IconButton>
+      </Box>
+      <Stack spacing={3} px={3} pb={4} pt={1} role="menu">
+        {user && (
+          <Box>
+            <Typography variant="overline" color="text.secondary">
+              Titles
+            </Typography>
+            <Button
+              fullWidth
+              variant="contained"
+              sx={{ mt: 1.5 }}
               onClick={() => {
                 onAddTitle();
                 onClose();
               }}
             >
               Add a Title
-            </button>
-          </div>
-        ) : null}
-        <div className="mobile-menu-section">
-          <p className="mobile-menu-subheading">Filters</p>
-          <CategoryFilter variant="menu" value={category} onChange={onCategoryChange} />
-        </div>
-        <div className="mobile-menu-section">
-          <p className="mobile-menu-subheading">{mobileAccountName}</p>
+            </Button>
+          </Box>
+        )}
+
+        <Box>
+          <Typography variant="overline" color="text.secondary">
+            Filters
+          </Typography>
+          <Box mt={1.5}>
+            <CategoryFilter variant="menu" value={category} onChange={onCategoryChange} />
+          </Box>
+        </Box>
+
+        <Divider />
+
+        <Box>
+          <Typography variant="overline" color="text.secondary">
+            {user ? "Account" : "Welcome"}
+          </Typography>
           {user ? (
-            <div className="mobile-account-summary">
-              <div className="mobile-account-actions">
-                <button
-                  className="primary"
-                  onClick={() => {
-                    onOpenAccount();
-                    onClose();
-                  }}
-                >
-                  Account settings
-                </button>
-                <button
-                  className="ghost-button"
-                  onClick={() => {
-                    onLogout();
-                    onClose();
-                  }}
-                >
-                  Log out
-                </button>
-              </div>
-            </div>
+            <Stack spacing={1.25} mt={1.5}>
+              <Typography fontWeight={600}>{mobileAccountName}</Typography>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  onOpenAccount();
+                  onClose();
+                }}
+              >
+                Account settings
+              </Button>
+              <Button
+                variant="text"
+                color="error"
+                onClick={() => {
+                  onLogout();
+                  onClose();
+                }}
+              >
+                Log out
+              </Button>
+            </Stack>
           ) : (
-            <button
-              className="primary"
+            <Button
+              fullWidth
+              variant="contained"
+              sx={{ mt: 1.5 }}
               onClick={() => {
                 onOpenAuth();
                 onClose();
               }}
             >
               Log in
-            </button>
+            </Button>
           )}
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Stack>
+    </Drawer>
   );
 };
 

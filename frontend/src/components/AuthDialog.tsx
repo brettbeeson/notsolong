@@ -1,8 +1,18 @@
 import { useEffect, useRef, useState } from "react";
+import {
+  Alert,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  TextField,
+} from "@mui/material";
 
 import { useAuth } from "../hooks/useAuth";
 import { getErrorMessage } from "../utils/errors";
-import { Modal } from "./Modal";
 import TurnstileWidget, { type TurnstileHandle } from "./TurnstileWidget";
 
 interface AuthDialogProps {
@@ -103,52 +113,65 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
   };
 
   return (
-    <Modal open={open} title="Log in or Register" onClose={onClose}>
-      <form
-        className="form"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void handleLogin();
-        }}
-      >
-        <label>
-          Email
-          <input
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+      <DialogTitle>Log in or Register</DialogTitle>
+      <DialogContent>
+        <Box
+          component="form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleLogin();
+          }}
+          display="flex"
+          flexDirection="column"
+          gap={2}
+          mt={1}
+        >
+          <TextField
+            label="Email"
             type="email"
             value={fields.email}
             onChange={(e) => setFields((prev) => ({ ...prev, email: e.target.value }))}
             required
+            autoFocus
           />
-        </label>
-        <label>
-          Password
-          <input
+          <TextField
+            label="Password"
             type="password"
             value={fields.password}
             onChange={(e) => setFields((prev) => ({ ...prev, password: e.target.value }))}
             required
           />
-        </label>
-        {turnstileKeyMissing && (
-          <p className="turnstile-error">
-            Account creation is temporarily disabled because the Turnstile key is missing.
-          </p>
-        )}
-        {error && <p className="error">{error}</p>}
-        <div className="auth-dialog-actions">
-          <button
-            type="submit"
-            className="primary"
+          {turnstileKeyMissing && (
+            <Alert severity="warning">
+              Account creation is temporarily disabled because the Turnstile key is missing.
+            </Alert>
+          )}
+          {error && <Alert severity="error">{error}</Alert>}
+          {turnstileEnabled && (
+            <Box display="flex" justifyContent="center" mt={1}>
+              <TurnstileWidget
+                ref={turnstileRef}
+                onTokenChange={setTurnstileToken}
+                action="auth-dialog"
+              />
+            </Box>
+          )}
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ flexDirection: { xs: "column", sm: "row" }, gap: 1, px: 3, pb: 2 }}>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} width="100%">
+          <Button
+            variant="contained"
+            fullWidth
             onClick={handleLogin}
-            disabled={
-              loadingAction === "login" || (turnstileEnabled && !turnstileToken)
-            }
+            disabled={loadingAction === "login" || (turnstileEnabled && !turnstileToken)}
           >
             {loadingAction === "login" ? "Logging in..." : "Log in"}
-          </button>
-          <button
-            type="button"
-            className="primary"
+          </Button>
+          <Button
+            variant="contained"
+            fullWidth
             onClick={handleRegister}
             disabled={
               loadingAction === "register" ||
@@ -157,20 +180,10 @@ const AuthDialog = ({ open, onClose }: AuthDialogProps) => {
             }
           >
             {loadingAction === "register" ? "Registering..." : "Register"}
-          </button>
-          {turnstileEnabled && (
-          <div className="turnstile-wrapper">
-            <TurnstileWidget
-              ref={turnstileRef}
-              onTokenChange={setTurnstileToken}
-              action="auth-dialog"
-            />
-          </div>
-        )}
-        
-        </div>
-      </form>
-    </Modal>
+          </Button>
+        </Stack>
+      </DialogActions>
+    </Dialog>
   );
 };
 

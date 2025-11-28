@@ -1,3 +1,4 @@
+import { Stack } from "@mui/material";
 import NavigationButtons from "./NavigationButtons";
 
 interface DesktopNavigationProps {
@@ -9,15 +10,16 @@ interface DesktopNavigationProps {
 
 const DesktopNavigation = ({ onBack, onNext, disableBack, disableNext }: DesktopNavigationProps) => {
   return (
-    <div className="desktop-nav-controls" role="toolbar" aria-label="Desktop navigation controls">
+    <Stack direction="row" alignItems="center" spacing={1} role="toolbar" aria-label="Desktop navigation controls">
       <NavigationButtons
         onBack={onBack}
         onNext={onNext}
         disableBack={disableBack}
         disableNext={disableNext}
-        buttonClassName="desktop-nav-button"
+        variant="outlined"
+        size="medium"
       />
-    </div>
+    </Stack>
   );
 };
 
