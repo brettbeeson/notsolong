@@ -66,7 +66,8 @@ function App() {
   const surfaceColor = theme.palette.background.paper;
   const textPrimary = theme.palette.text.primary;
   const textSecondary = theme.palette.text.secondary;
-  const bottomBarHeight = "max(30px, 8vh)";
+  const safeAreaInsetBottom = "env(safe-area-inset-bottom, 0px)";
+  const bottomBarOffset = `calc(96px + ${safeAreaInsetBottom})`;
   const { user, logout, updateProfile, refreshProfile } = useAuth();
   const historyIndex = useHistoryStore((state) => state.index);
   const historyItems = useHistoryStore((state) => state.items);
@@ -348,17 +349,6 @@ useEffect(() => () => {
     return () => window.clearTimeout(timer);
   }, [bundle?.title.id]);
 
-  useEffect(() => {
-    if (isMobileMenuOpen) {
-      const original = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = original;
-      };
-    }
-    return undefined;
-  }, [isMobileMenuOpen]);
-
   const handleNext = async () => {
     if (!canGoForward && isForwardExhausted) {
       return;
@@ -489,7 +479,7 @@ useEffect(() => () => {
     emptyCategory !== null
       ? CATEGORY_OPTIONS.find((option) => option.value === emptyCategory)?.label ?? "All"
       : null;
-  const mobileContentPadding = `calc(2.5rem + ${bottomBarHeight} + env(safe-area-inset-bottom, 0px) + 1.5rem)`;
+  const mobileContentPadding = `calc(4rem + 96px + ${safeAreaInsetBottom})`;
   const stageAnimation = isTitleAnimating
     ? `${transitionDirection === "backward" ? slideBackward : slideForward} 0.85s cubic-bezier(0.16, 1, 0.3, 1)`
     : undefined;
@@ -693,6 +683,9 @@ useEffect(() => () => {
           />
         </Box>
       </Box>
+      {!isDesktopNavVisible && (
+        <Box aria-hidden sx={{ height: bottomBarOffset, flexShrink: 0 }} />
+      )}
 
       {!isDesktopNavVisible && !isOverlayOpen && (
         <BottomBar

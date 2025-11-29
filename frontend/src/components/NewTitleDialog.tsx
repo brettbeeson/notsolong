@@ -8,8 +8,13 @@ import {
   DialogContent,
   DialogTitle,
   MenuItem,
+  Stack,
   TextField,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
+import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 
 import { createTitle, fetchTitleSummary } from "../api/endpoints";
 import type { Title, TitleBundle, TitleCategory } from "../types/api";
@@ -35,6 +40,10 @@ const NewTitleDialog = ({ open, onClose, onCreated }: NewTitleDialogProps) => {
   const [author, setAuthor] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const titleText = "Add a new Title";
+  const handleDrawerOpen = () => {};
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -59,39 +68,77 @@ const NewTitleDialog = ({ open, onClose, onCreated }: NewTitleDialogProps) => {
     }
   };
 
+  const fieldInputs = (
+    <Box display="flex" flexDirection="column" gap={2}>
+      <TextField
+        label="Name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        required
+        autoFocus={!isMobile}
+      />
+      <TextField
+        label="Category"
+        select
+        value={category}
+        onChange={(e) => setCategory(e.target.value as TitleCategory)}
+      >
+        {categories.map((option) => (
+          <MenuItem key={option.value} value={option.value}>
+            {option.label}
+          </MenuItem>
+        ))}
+      </TextField>
+      <TextField
+        label="Author / Creator"
+        value={author}
+        onChange={(e) => setAuthor(e.target.value)}
+        placeholder="Optional"
+      />
+      {error && <Alert severity="error">{error}</Alert>}
+    </Box>
+  );
+
+  const actionButtons = (
+    <>
+      <Button type="button" onClick={onClose}>
+        Cancel
+      </Button>
+      <Button type="submit" variant="contained" disabled={loading}>
+        {loading ? "Saving..." : "Create Title"}
+      </Button>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <SwipeableDrawer
+        anchor="bottom"
+        open={open}
+        onClose={onClose}
+        onOpen={handleDrawerOpen}
+        disableSwipeToOpen
+        aria-label={titleText}
+        ModalProps={{ keepMounted: true }}
+      >
+        <Box component="form" onSubmit={handleSubmit} px={2} py={3}>
+          <Stack spacing={2}>
+            <Typography variant="h6" component="h2">
+              {titleText}
+            </Typography>
+            {fieldInputs}
+            <Stack spacing={1}>{actionButtons}</Stack>
+          </Stack>
+        </Box>
+      </SwipeableDrawer>
+    );
+  }
+
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" component="form" onSubmit={handleSubmit}>
-      <DialogTitle>Add a new Title</DialogTitle>
-      <DialogContent dividers>
-        <Box display="flex" flexDirection="column" gap={2} mt={1}>
-          <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
-          <TextField
-            label="Category"
-            select
-            value={category}
-            onChange={(e) => setCategory(e.target.value as TitleCategory)}
-          >
-            {categories.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            label="Author / Creator"
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            placeholder="Optional"
-          />
-          {error && <Alert severity="error">{error}</Alert>}
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button type="submit" variant="contained" disabled={loading}>
-          {loading ? "Saving..." : "Create Title"}
-        </Button>
-      </DialogActions>
+      <DialogTitle>{titleText}</DialogTitle>
+      <DialogContent dividers>{fieldInputs}</DialogContent>
+      <DialogActions>{actionButtons}</DialogActions>
     </Dialog>
   );
 };

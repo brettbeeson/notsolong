@@ -9,8 +9,6 @@ import environ
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 APPS_DIR = BASE_DIR / "notsolong"
 
-warnings.simplefilter("always", DeprecationWarning)
-
 warnings.filterwarnings(
     "ignore",
     message=r".*is deprecated.*",

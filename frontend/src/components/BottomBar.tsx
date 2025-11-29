@@ -53,18 +53,18 @@ const BottomBar = ({ onBack, onNext, disableBack, disableNext, category, onCateg
 
   const closeFilterMenu = () => setFilterAnchor(null);
 
-  const transformStyle = viewportOffset ? { transform: `translateY(-${viewportOffset}px)` } : undefined;
+  const transformOffset = viewportOffset ? { transform: `translateY(-${viewportOffset}px)` } : undefined;
 
   return (
     <AppBar
       position="fixed"
       color="default"
       elevation={6}
-      style={transformStyle}
       sx={{
         top: "auto",
         bottom: "calc(env(safe-area-inset-bottom, 0px) + 0.25rem)",
         backgroundColor: (theme) => theme.palette.background.paper,
+        ...transformOffset,
       }}
     >
       <Toolbar disableGutters sx={{ justifyContent: "center" }}>

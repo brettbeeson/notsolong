@@ -7,7 +7,6 @@ import {
   Button,
   Dialog,
   DialogContent,
-  DialogTitle,
   Divider,
   Stack,
   Tab,
@@ -17,6 +16,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
+import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import GoogleIcon from "@mui/icons-material/Google";
 
 import { useAuth } from "../hooks/useAuth";
@@ -413,13 +413,7 @@ const AuthDialog = ({
           >
             Forgot password?
           </Button>
-          <Button
-            type="button"
-            variant="text"
-            onClick={() => switchView("register")}
-          >
-            Need an account? Register
-          </Button>
+        
         </Stack>
       );
     }
@@ -450,13 +444,16 @@ const AuthDialog = ({
       case "reset":
         return "Choose a new password";
       default:
-        return "Welcome back";
+        return isMobile ? "Log in" : "Welcome back";
     }
   })();
 
-  return (
-    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="xs">
-      <DialogTitle>{title}</DialogTitle>
+  const handleDrawerOpen = () => {
+    // Drawer state is controlled by the parent; this no-op satisfies SwipeableDrawer.
+  };
+
+  const formContent = (
+    <Stack spacing={isMobile ? 2 : 3}>
       {showTabs && (
         <Tabs
           value={view}
@@ -467,15 +464,13 @@ const AuthDialog = ({
           <Tab label="Register" value="register" />
         </Tabs>
       )}
-      <DialogContent>
-        <Box
-          component="form"
-          onSubmit={handleSubmit}
-          display="flex"
-          flexDirection="column"
-          gap={2}
-          mt={1}
-        >
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        display="flex"
+        flexDirection="column"
+        gap={isMobile ? 1.5 : 2}
+      >
           {showGoogleOption && (
             <Stack spacing={1}>
               <Button
@@ -516,7 +511,7 @@ const AuthDialog = ({
               value={fields.email}
               onChange={(e) => setFields((prev) => ({ ...prev, email: e.target.value }))}
               required
-              autoFocus
+              autoFocus={!isMobile}
             />
           )}
 
@@ -571,27 +566,46 @@ const AuthDialog = ({
           {error && <Alert severity="error">{error}</Alert>}
           {successMessage && <Alert severity="success">{successMessage}</Alert>}
 
-        
-
           <Stack spacing={1} mt={1}>
             <Button type="submit" variant="contained" disabled={disableSubmit}>
               {submitLabel}
             </Button>
             {renderSecondaryActions()}
-          
+
             {showTurnstile && (
-            <Box display="flex" justifyContent="center">
-              <TurnstileWidget
-                ref={turnstileRef}
-                onTokenChange={setTurnstileToken}
-                action="auth-dialog"
-                size={isMobile ? "compact" : "normal"}
-              />
-            </Box>
-          )}
+              <Box display="flex" justifyContent="center">
+                <TurnstileWidget
+                  ref={turnstileRef}
+                  onTokenChange={setTurnstileToken}
+                  action="auth-dialog"
+                  size={isMobile ? "compact" : "normal"}
+                />
+              </Box>
+            )}
           </Stack>
-        </Box>
-      </DialogContent>
+      </Box>
+    </Stack>
+  );
+
+  if (isMobile) {
+    return (
+      <SwipeableDrawer
+        anchor="bottom"
+        open={open}
+        onClose={handleDialogClose}
+        onOpen={handleDrawerOpen}
+        disableSwipeToOpen
+        aria-label={title}
+        ModalProps={{ keepMounted: true }}
+      >
+        <Box px={2} py={3}>{formContent}</Box>
+      </SwipeableDrawer>
+    );
+  }
+
+  return (
+    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="xs" aria-label={title}>
+      <DialogContent>{formContent}</DialogContent>
     </Dialog>
   );
 };
