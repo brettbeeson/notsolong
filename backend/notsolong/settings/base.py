@@ -30,14 +30,17 @@ FRONTEND_DIST_DIR = Path(
         default=str(BASE_DIR / "frontend" / "dist"),
     )
 )
-CORS_ALLOW_ALL_ORIGINS = True
+
 
 SITE_ID = 1
+# not yet used, but may be useful later
+SITE_URL = env("DJANGO_SITE_URL", default="http://localhost:8000")
 
 SECRET_KEY = env("DJANGO_SECRET_KEY", default="change-me-in-prod")
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
+
 TURNSTILE_SECRET_KEY = env("TURNSTILE_SECRET_KEY", default="")
 GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID", default="")
 GOOGLE_CLIENT_SECRET = env("GOOGLE_CLIENT_SECRET", default="")

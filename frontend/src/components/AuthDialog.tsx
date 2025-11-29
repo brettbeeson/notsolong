@@ -571,7 +571,15 @@ const AuthDialog = ({
           {error && <Alert severity="error">{error}</Alert>}
           {successMessage && <Alert severity="success">{successMessage}</Alert>}
 
-          {showTurnstile && (
+        
+
+          <Stack spacing={1} mt={1}>
+            <Button type="submit" variant="contained" disabled={disableSubmit}>
+              {submitLabel}
+            </Button>
+            {renderSecondaryActions()}
+          
+            {showTurnstile && (
             <Box display="flex" justifyContent="center">
               <TurnstileWidget
                 ref={turnstileRef}
@@ -581,12 +589,6 @@ const AuthDialog = ({
               />
             </Box>
           )}
-
-          <Stack spacing={1} mt={1}>
-            <Button type="submit" variant="contained" disabled={disableSubmit}>
-              {submitLabel}
-            </Button>
-            {renderSecondaryActions()}
           </Stack>
         </Box>
       </DialogContent>

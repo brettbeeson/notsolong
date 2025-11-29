@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { isAxiosError } from "axios";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { Box, Stack, useMediaQuery, useTheme } from "@mui/material";
 
@@ -210,27 +211,6 @@ useEffect(() => () => {
     setRecapDialogOpen(true);
   }, [requireAuth]);
 
-  const loadTitleSummary = useCallback(async (id: number, showSpinner = false) => {
-    if (showSpinner) {
-      setLoading(true);
-    }
-    try {
-      const data = await fetchTitleSummary(id);
-      const normalized = normalizeBundle(data);
-      setBundle(normalized);
-      syncVotesFromBundle(normalized);
-      setError(null);
-      return true;
-    } catch (err) {
-      setError(getErrorMessage(err));
-      return false;
-    } finally {
-      if (showSpinner) {
-        setLoading(false);
-      }
-    }
-  }, [normalizeBundle, syncVotesFromBundle]);
-
   const loadRandom = useCallback(
     async (shouldReset = false) => {
       setLoading(true);
@@ -272,6 +252,40 @@ useEffect(() => () => {
       }
     },
     [category, normalizeBundle, recordHistory, resetHistory, setEmptyCategory, syncVotesFromBundle]
+  );
+
+  const restartTitleFeed = useCallback(async () => {
+    resetHistory();
+    await loadRandom(true);
+  }, [loadRandom, resetHistory]);
+
+  const loadTitleSummary = useCallback(
+    async (id: number, showSpinner = false) => {
+      if (showSpinner) {
+        setLoading(true);
+      }
+      try {
+        const data = await fetchTitleSummary(id);
+        const normalized = normalizeBundle(data);
+        setBundle(normalized);
+        syncVotesFromBundle(normalized);
+        setError(null);
+        return true;
+      } catch (err) {
+        if (isAxiosError(err) && err.response?.status === 404) {
+          setError(null);
+          await restartTitleFeed();
+        } else {
+          setError(getErrorMessage(err));
+        }
+        return false;
+      } finally {
+        if (showSpinner) {
+          setLoading(false);
+        }
+      }
+    },
+    [normalizeBundle, restartTitleFeed, syncVotesFromBundle]
   );
 
   useEffect(() => {
@@ -589,12 +603,9 @@ useEffect(() => () => {
       <NewTitleDialog
         open={isAddTitleOpen}
         onClose={() => setAddTitleOpen(false)}
-        onCreated={(newBundle) => {
-          const normalized = normalizeBundle(newBundle);
-          setBundle(normalized);
-          syncVotesFromBundle(normalized);
-          resetHistory(normalized.title.id);
+        onCreated={() => {
           setAddTitleOpen(false);
+          void restartTitleFeed();
         }}
       />
 

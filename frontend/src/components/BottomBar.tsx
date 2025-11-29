@@ -2,7 +2,7 @@ import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import FilterAltRoundedIcon from "@mui/icons-material/FilterAltRounded";
 import { Box, Button, Menu, MenuItem, Paper } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { CATEGORY_OPTIONS } from "../constants/categories";
 import type { TitleCategory } from "../types/api";
@@ -16,11 +16,43 @@ interface BottomBarProps {
   onCategoryChange: (value: TitleCategory | "") => void;
 }
 
+const useVisualViewportOffset = () => {
+  const [offset, setOffset] = useState(0);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) {
+      return;
+    }
+
+    const viewport = window.visualViewport;
+    const handleViewportChange = () => {
+      const vv = window.visualViewport;
+      if (!vv) return;
+      const nextOffset = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
+      setOffset(nextOffset);
+    };
+
+    viewport.addEventListener("resize", handleViewportChange);
+    viewport.addEventListener("scroll", handleViewportChange);
+    handleViewportChange();
+
+    return () => {
+      viewport.removeEventListener("resize", handleViewportChange);
+      viewport.removeEventListener("scroll", handleViewportChange);
+    };
+  }, []);
+
+  return offset;
+};
+
 const BottomBar = ({ onBack, onNext, disableBack, disableNext, category, onCategoryChange }: BottomBarProps) => {
   const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
+  const viewportOffset = useVisualViewportOffset();
   const selectedLabel = CATEGORY_OPTIONS.find((option) => option.value === category)?.label ?? "All";
 
   const closeFilterMenu = () => setFilterAnchor(null);
+
+  const transformStyle = viewportOffset ? { transform: `translateY(-${viewportOffset}px)` } : undefined;
 
   return (
     <Paper
@@ -29,18 +61,22 @@ const BottomBar = ({ onBack, onNext, disableBack, disableNext, category, onCateg
       elevation={12}
       sx={{
         position: "fixed",
-        left: "50%",
-        transform: "translateX(-50%)",
-        bottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))",
-        width: "min(520px, calc(100% - 1.5rem))",
+        left: 16,
+        right: 16,
+        bottom: "calc(env(safe-area-inset-bottom, 0px) + 0.85rem)",
+        width: "auto",
+        maxWidth: 520,
+        margin: "0 auto",
         padding: 1,
         borderRadius: 4,
         backdropFilter: "blur(18px)",
         backgroundColor: "rgba(255,255,255,0.92)",
         border: "1px solid rgba(63, 42, 252, 0.08)",
         boxShadow: "0 10px 26px rgba(15,13,36,0.22)",
+        boxSizing: "border-box",
         zIndex: (theme) => theme.zIndex.modal + 1,
       }}
+      style={transformStyle}
     >
       <Box display="grid" gridTemplateColumns="auto 1fr auto" alignItems="center" columnGap={1.25}>
         <Button
