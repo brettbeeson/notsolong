@@ -21,11 +21,7 @@ export const getErrorMessage = (
       return message || `Network error${urlInfo}`;
     }
 
-    if (response?.status && response.statusText) {
-      return `${response.status} ${response.statusText}${urlInfo}`;
-    }
-
-    if (typeof data === "string") {
+    if (typeof data === "string" && data.trim().length) {
       return data;
     }
     if (data && typeof data === "object") {
@@ -46,6 +42,10 @@ export const getErrorMessage = (
           return formatFieldMessage(field, value);
         }
       }
+    }
+
+    if (response?.status && response.statusText) {
+      return `${response.status} ${response.statusText}${urlInfo}`;
     }
   }
   if (error instanceof Error) {

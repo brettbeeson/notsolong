@@ -10,6 +10,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { useEffect } from "react";
 
 import type { Recap, TitleBundle } from "../types/api";
 import RecapCard from "./RecapCard";
@@ -24,6 +25,7 @@ interface TitleViewerProps {
   currentUserEmail?: string | null;
   onEditRecap: (quote: Recap) => void;
   onDeleteRecap: (quote: Recap) => void;
+  onPromptAddTitle?: () => void;
 }
 
 const TitleViewer = ({
@@ -36,7 +38,14 @@ const TitleViewer = ({
   currentUserEmail,
   onEditRecap,
   onDeleteRecap,
+  onPromptAddTitle,
 }: TitleViewerProps) => {
+  useEffect(() => {
+    if (!bundle && !loading) {
+      onPromptAddTitle?.();
+    }
+  }, [bundle, loading, onPromptAddTitle]);
+
   if (loading) {
     return (
       <Paper sx={{ p: 4, textAlign: "center" }}>

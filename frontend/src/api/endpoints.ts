@@ -1,12 +1,11 @@
 import { apiClient } from "./client";
 import { isAxiosError } from "axios";
 import type {
+  AuthSession,
   Recap,
-  RegisterResponse,
   Title,
   TitleBundle,
   TitleCategory,
-  Tokens,
   User,
 } from "../types/api";
 
@@ -86,6 +85,20 @@ type LoginPayload = {
   turnstile_token?: string;
 };
 
+type DjRestAuthJWTResponse = {
+  access: string;
+  refresh: string;
+  user: User;
+};
+
+const mapAuthResponse = (data: DjRestAuthJWTResponse): AuthSession => ({
+  user: data.user,
+  tokens: {
+    access: data.access,
+    refresh: data.refresh,
+  },
+});
+
 export const login = async ({
   email,
   password,
@@ -95,8 +108,11 @@ export const login = async ({
   if (turnstile_token) {
     body.turnstile_token = turnstile_token;
   }
-  const { data } = await apiClient.post<Tokens>("/auth/token/", body);
-  return data;
+  const { data } = await apiClient.post<DjRestAuthJWTResponse>(
+    "/auth/login/",
+    body
+  );
+  return mapAuthResponse(data);
 };
 
 export const refreshToken = async (refresh: string) => {
@@ -110,33 +126,75 @@ export const refreshToken = async (refresh: string) => {
 type RegisterPayload = {
   email: string;
   password: string;
+  username?: string;
   turnstile_token?: string;
 };
 
 export const register = async ({
   email,
   password,
+  username,
   turnstile_token,
 }: RegisterPayload) => {
-  const body: RegisterPayload = { email, password };
-  if (turnstile_token) {
-    body.turnstile_token = turnstile_token;
+  const payload: Record<string, string> = {
+    email,
+    password1: password,
+    password2: password,
+  };
+  if (username) {
+    payload.username = username;
   }
-  const { data } = await apiClient.post<RegisterResponse>(
-    "/auth/register/",
-    body
+  if (turnstile_token) {
+    payload.turnstile_token = turnstile_token;
+  }
+  const { data } = await apiClient.post<DjRestAuthJWTResponse>(
+    "/auth/registration/",
+    payload
   );
-  return data;
+  return mapAuthResponse(data);
+};
+
+export const loginWithGoogle = async (accessToken: string) => {
+  const { data } = await apiClient.post<DjRestAuthJWTResponse>(
+    "/auth/google/",
+    {
+      access_token: accessToken,
+    }
+  );
+  return mapAuthResponse(data);
+};
+
+export const logout = async (refresh?: string) => {
+  const body = refresh ? { refresh } : undefined;
+  await apiClient.post("/auth/logout/", body);
 };
 
 export const fetchCurrentUser = async () => {
-  const { data } = await apiClient.get<User>("/auth/me/");
+  const { data } = await apiClient.get<User>("/auth/user/");
   return data;
 };
 
 export const updateCurrentUser = async (
-  payload: Partial<Pick<User, "display_name" | "email">>
+  payload: Partial<Pick<User, "username" | "email">>
 ) => {
-  const { data } = await apiClient.patch<User>("/auth/me/", payload);
+  const { data } = await apiClient.patch<User>("/auth/user/", payload);
   return data;
+};
+
+export const requestPasswordReset = async (email: string) => {
+  await apiClient.post("/auth/password/reset/", { email });
+};
+
+export const confirmPasswordReset = async (payload: {
+  uid: string;
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}) => {
+  await apiClient.post("/auth/password/reset/confirm/", {
+    uid: payload.uid,
+    token: payload.token,
+    new_password1: payload.newPassword,
+    new_password2: payload.confirmPassword,
+  });
 };

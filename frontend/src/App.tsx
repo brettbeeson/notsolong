@@ -26,6 +26,12 @@ import type { Recap, TitleBundle, TitleCategory } from "./types/api";
 import { getErrorMessage } from "./utils/errors";
 import logoUrl from "./assets/favicon.ico";
 
+type PasswordResetParams = {
+  uid: string;
+  token: string;
+  email?: string;
+};
+
 const detectSwipeCapability = () => {
   if (typeof window === "undefined") {
     return true;
@@ -41,7 +47,7 @@ const detectSwipeCapability = () => {
 function App() {
   const theme = useTheme();
   const isDesktopNavVisible = useMediaQuery(theme.breakpoints.up("md"));
-  const { user, logout, updateProfile } = useAuth();
+  const { user, logout, updateProfile, refreshProfile } = useAuth();
   const historyIndex = useHistoryStore((state) => state.index);
   const historyItems = useHistoryStore((state) => state.items);
   const recordHistory = useHistoryStore((state) => state.record);
@@ -62,11 +68,23 @@ function App() {
   const [userVotes, setUserVotes] = useState<Record<number, -1 | 0 | 1 | undefined>>({});
   const [editingRecap, setEditingRecap] = useState<Recap | null>(null);
   const swipeStartX = useRef<number | null>(null);
+  const addTitleHintTimer = useRef<number | null>(null);
   const [isSwipeCapable, setSwipeCapable] = useState<boolean>(() => detectSwipeCapability());
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState<"forward" | "backward">("forward");
   const [isTitleAnimating, setTitleAnimating] = useState(false);
   const [isForwardExhausted, setForwardExhausted] = useState(false);
+  const [resetParams, setResetParams] = useState<PasswordResetParams | null>(null);
+  const [addTitleHintActive, setAddTitleHintActive] = useState(false);
+
+  const isAuthenticated = Boolean(user);
+
+  useEffect(() => {
+    if (!isAccountOpen || !isAuthenticated) {
+      return;
+    }
+    void refreshProfile();
+  }, [isAccountOpen, isAuthenticated, refreshProfile]);
 
   const normalizeBundle = useCallback((data: TitleBundle) => {
     const sortedOthers = [...data.other_recaps].sort((a, b) => {
@@ -134,6 +152,30 @@ function App() {
     mediaQuery.addListener(updateCapability);
     return () => mediaQuery.removeListener(updateCapability);
   }, []);
+
+  const dismissAddTitleHint = useCallback(() => {
+    if (typeof window !== "undefined" && addTitleHintTimer.current !== null) {
+      window.clearTimeout(addTitleHintTimer.current);
+    }
+    addTitleHintTimer.current = null;
+    setAddTitleHintActive(false);
+  }, []);
+
+  const promptAddTitleHint = useCallback(() => {
+    if (typeof window === "undefined") return;
+    if (addTitleHintTimer.current !== null) {
+      window.clearTimeout(addTitleHintTimer.current);
+    }
+    setAddTitleHintActive(true);
+    addTitleHintTimer.current = window.setTimeout(() => {
+      setAddTitleHintActive(false);
+      addTitleHintTimer.current = null;
+    }, 1800);
+  }, []);
+
+useEffect(() => () => {
+  dismissAddTitleHint();
+}, [dismissAddTitleHint]);
 
   const requireAuth = useCallback(() => {
     if (!user) {
@@ -210,7 +252,7 @@ function App() {
       } catch (err) {
         if (err instanceof NoTitlesAvailableError) {
           setBundle(null);
-          setError("No titles available. Add a new title.");
+          // setError("No titles available. Add a new title.");
           resetHistory();
           setForwardExhausted(true);
         } else {
@@ -226,6 +268,35 @@ function App() {
   useEffect(() => {
     loadRandom(true);
   }, [loadRandom]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const searchParams = new URLSearchParams(window.location.search);
+    const hash = window.location.hash;
+    if (hash.includes("?")) {
+      const hashQuery = hash.split("?")[1] ?? "";
+      const hashParams = new URLSearchParams(hashQuery);
+      hashParams.forEach((value, key) => {
+        if (!searchParams.has(key)) {
+          searchParams.set(key, value);
+        }
+      });
+    }
+    const uid = searchParams.get("resetUid") ?? searchParams.get("uid");
+    const token = searchParams.get("resetToken") ?? searchParams.get("token");
+    if (uid && token) {
+      const email = searchParams.get("resetEmail") ?? undefined;
+      setResetParams({ uid, token, email: email || undefined });
+      setAuthOpen(true);
+      ["resetUid", "uid", "resetToken", "token", "resetEmail"].forEach((key) => {
+        searchParams.delete(key);
+      });
+      const newSearch = searchParams.toString();
+      const hashPath = hash.split("?")[0] ?? "";
+      const nextUrl = `${window.location.pathname}${newSearch ? `?${newSearch}` : ""}${hashPath}`;
+      window.history.replaceState({}, "", nextUrl);
+    }
+  }, []);
 
   useEffect(() => {
     if (!bundle?.title.id) return;
@@ -320,7 +391,8 @@ function App() {
   const handleAddTitleRequest = useCallback(() => {
     if (!requireAuth()) return;
     setAddTitleOpen(true);
-  }, [requireAuth]);
+    dismissAddTitleHint();
+  }, [requireAuth, dismissAddTitleHint]);
 
   const beginSwipe = (clientX: number, target: EventTarget | null) => {
     if (!isSwipeCapable) return;
@@ -376,6 +448,10 @@ function App() {
   const disableNextNav = !bundle || loading || (!canGoForward && isForwardExhausted);
   const isOverlayOpen =
     isMobileMenuOpen || isRecapDialogOpen || isAddTitleOpen || isAuthOpen || isAccountOpen;
+  const mobileMenuButtonClasses = ["mobile-menu-button"];
+  if (addTitleHintActive) {
+    mobileMenuButtonClasses.push("attention-pulse");
+  }
   
   return (
     <div className="app-shell">
@@ -393,6 +469,7 @@ function App() {
               onAccount={() => setAccountOpen(true)}
               onLogout={logout}
               onAddTitle={handleAddTitleRequest}
+              highlightAddTitle={addTitleHintActive}
             />
           ) : (
             <button className="secondary" onClick={() => setAuthOpen(true)}>
@@ -402,7 +479,7 @@ function App() {
         </div>
         <button
           type="button"
-          className="mobile-menu-button"
+          className={mobileMenuButtonClasses.join(" ")}
           aria-label="Open menu"
           aria-expanded={isMobileMenuOpen}
           onClick={() => setMobileMenuOpen(true)}
@@ -466,6 +543,7 @@ function App() {
             onDeleteRecap={(quote) => {
               void handleDeleteRecap(quote);
             }}
+            onPromptAddTitle={promptAddTitleHint}
           />
         </div>
       </div>
@@ -506,7 +584,12 @@ function App() {
         }}
       />
 
-      <AuthDialog open={isAuthOpen} onClose={() => setAuthOpen(false)} />
+      <AuthDialog
+        open={isAuthOpen}
+        onClose={() => setAuthOpen(false)}
+        resetParams={resetParams}
+        onResetParamsCleared={() => setResetParams(null)}
+      />
 
       {isAccountOpen && user && (
         <AccountPanel

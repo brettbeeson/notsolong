@@ -1,3 +1,4 @@
+import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import {
   Avatar,
@@ -6,6 +7,8 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  ListItemIcon,
+  ListItemText,
   Typography,
 } from "@mui/material";
 import { useState } from "react";
@@ -18,9 +21,10 @@ interface UserMenuProps {
   onAccount: () => void;
   onLogout: () => void;
   onAddTitle: () => void;
+  highlightAddTitle?: boolean;
 }
 
-const UserMenu = ({ user, onAccount, onLogout, onAddTitle }: UserMenuProps) => {
+const UserMenu = ({ user, onAccount, onLogout, onAddTitle, highlightAddTitle = false }: UserMenuProps) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -32,6 +36,7 @@ const UserMenu = ({ user, onAccount, onLogout, onAddTitle }: UserMenuProps) => {
         color="primary"
         onClick={(event) => setAnchorEl(event.currentTarget)}
         aria-label="Open user menu"
+        className={highlightAddTitle ? "attention-pulse" : undefined}
       >
         <MenuRoundedIcon />
       </IconButton>
@@ -57,11 +62,35 @@ const UserMenu = ({ user, onAccount, onLogout, onAddTitle }: UserMenuProps) => {
         <MenuItem
           onClick={() => {
             handleClose();
+            onAddTitle();
+          }}
+          selected={highlightAddTitle}
+          sx={{
+            gap: 1,
+            borderRadius: 1,
+            bgcolor: highlightAddTitle ? "action.selected" : undefined,
+            color: highlightAddTitle ? "primary.main" : undefined,
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 36, color: "inherit" }}>
+            <AddCircleOutlineRoundedIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText
+            primary="Add a Title"
+            secondary="Share the next great recap"
+            
+          />
+        </MenuItem>
+        <Divider sx={{ my: 1 }} />
+        <MenuItem
+          onClick={() => {
+            handleClose();
             onAccount();
           }}
         >
-          Add a Title
+          Settings
         </MenuItem>
+        
         <Divider sx={{ my: 1 }} />
         <MenuItem
           onClick={() => {
@@ -69,15 +98,6 @@ const UserMenu = ({ user, onAccount, onLogout, onAddTitle }: UserMenuProps) => {
             onLogout();
           }}
         >
-          Account settings
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            handleClose();
-            onAddTitle();
-          }}
-        >
-          
           Log out
         </MenuItem>
         

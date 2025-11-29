@@ -41,7 +41,12 @@ const NewTitleDialog = ({ open, onClose, onCreated }: NewTitleDialogProps) => {
     setLoading(true);
     setError(null);
     try {
-      const title: Title = await createTitle({ name, category, author });
+      // Make load of the rings -> "Load of the Rings"
+      const titleCaseName = name
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+      const title: Title = await createTitle({ name: titleCaseName, category, author });
       const bundle = await fetchTitleSummary(title.id);
       onCreated(bundle);
       setName("");

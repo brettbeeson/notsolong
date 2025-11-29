@@ -19,24 +19,26 @@ interface AccountPanelProps {
   open: boolean;
   user: User | null;
   onClose: () => void;
-  onSave: (payload: { display_name?: string; email?: string }) => Promise<void>;
+  onSave: (payload: { username?: string; email?: string }) => Promise<void>;
 }
 
 const AccountPanel = ({ open, user, onClose, onSave }: AccountPanelProps) => {
-  const [displayName, setDisplayName] = useState(user?.display_name ?? "");
-  const [email, setEmail] = useState(user?.email ?? "");
+  const [draft, setDraft] = useState<{
+    key: string;
+    values: { username?: string; email?: string };
+  } | null>(null);
   const [status, setStatus] = useState<"idle" | "saving">("idle");
   const [error, setError] = useState<string | null>(null);
 
+  const userKey = user ? `${user.id ?? "anon"}:${user.username ?? ""}:${user.email ?? ""}` : "guest";
+  const draftValues = draft?.key === userKey ? draft.values : null;
+  const username = draftValues?.username ?? user?.username ?? "";
+  const email = draftValues?.email ?? user?.email ?? "";
+
   const resetState = () => {
+    setDraft(null);
     setStatus("idle");
     setError(null);
-  };
-
-  const markDirty = () => {
-    if (error) {
-      setError(null);
-    }
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -45,7 +47,7 @@ const AccountPanel = ({ open, user, onClose, onSave }: AccountPanelProps) => {
     setStatus("saving");
     setError(null);
     try {
-      await onSave({ display_name: displayName, email });
+      await onSave({ username, email });
       handleClose();
     } catch (err) {
       setStatus("idle");
@@ -65,25 +67,35 @@ const AccountPanel = ({ open, user, onClose, onSave }: AccountPanelProps) => {
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
       <Box component="form" onSubmit={handleSubmit} display="flex" flexDirection="column">
-        <DialogTitle>{`Account • ${getDisplayName(user)}`}</DialogTitle>
+        <DialogTitle>{`Account and Settings`}</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} mt={1}>
             <TextField
-              label="Display name"
-              value={displayName}
+              label="Username"
+              value={username}
               onChange={(e) => {
-                setDisplayName(e.target.value);
-                markDirty();
+                setDraft({
+                  key: userKey,
+                  values: { ...(draftValues ?? { username, email }), username: e.target.value },
+                });
+                if (error) {
+                  setError(null);
+                }
               }}
-              placeholder="Add a name"
+              placeholder="Add a username"
             />
             <TextField
               label="Email"
               type="email"
               value={email}
               onChange={(e) => {
-                setEmail(e.target.value);
-                markDirty();
+                setDraft({
+                  key: userKey,
+                  values: { ...(draftValues ?? { username, email }), email: e.target.value },
+                });
+                if (error) {
+                  setError(null);
+                }
               }}
               required
             />

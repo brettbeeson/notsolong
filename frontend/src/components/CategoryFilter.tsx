@@ -30,21 +30,37 @@ const CategoryFilter = ({ value, onChange, variant = "default" }: CategoryFilter
   };
 
   if (variant === "menu") {
-    return (
-      <Stack spacing={1} width="100%">
-        {categories.map((category) => {
+    const columnA = categories.filter((_, idx) => idx % 2 === 0);
+    const columnB = categories.filter((_, idx) => idx % 2 === 1);
+    const renderColumn = (column: typeof categories) => (
+      <Stack spacing={1} flex={1} minWidth={0} alignItems="stretch">
+        {column.map((category) => {
           const active = category.value === value;
           return (
             <Button
               key={`menu-${category.value || "all"}`}
               variant={active ? "contained" : "outlined"}
+              size="small"
               onClick={() => onChange(category.value)}
-              fullWidth
+              sx={{
+                py: 1,
+                height: 40,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
             >
               {category.label}
             </Button>
           );
         })}
+      </Stack>
+    );
+
+    return (
+      <Stack direction="row" spacing={1} alignItems="flex-start">
+        {renderColumn(columnA)}
+        {renderColumn(columnB)}
       </Stack>
     );
   }

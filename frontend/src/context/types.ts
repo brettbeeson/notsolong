@@ -12,10 +12,20 @@ export interface AuthContextValue {
   register: (payload: {
     email: string;
     password: string;
+    username?: string;
     turnstileToken?: string;
   }) => Promise<void>;
-  logout: () => void;
+  loginWithGoogle: (accessToken: string) => Promise<void>;
+  logout: () => Promise<void>;
   updateProfile: (
-    payload: Partial<Pick<User, "display_name" | "email">>
+    payload: Partial<Pick<User, "username" | "email">>
   ) => Promise<void>;
+  refreshProfile: () => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  completePasswordReset: (payload: {
+    uid: string;
+    token: string;
+    newPassword: string;
+    confirmPassword: string;
+  }) => Promise<void>;
 }

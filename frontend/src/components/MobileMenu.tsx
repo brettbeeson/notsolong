@@ -2,7 +2,7 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import {
   Box,
   Button,
-  Divider,
+  
   Drawer,
   IconButton,
   Stack,
@@ -37,6 +37,7 @@ const MobileMenu = ({
   onCategoryChange,
 }: MobileMenuProps) => {
   const mobileAccountName = user ? getDisplayName(user) : "";
+  const mobileEmailName = user && user.email ? user.email : "";
 
   return (
     <Drawer anchor="right" open={isOpen} onClose={onClose} PaperProps={{ sx: { width: 360, maxWidth: "100%" } }}>
@@ -74,15 +75,13 @@ const MobileMenu = ({
           </Box>
         </Box>
 
-        <Divider />
-
         <Box>
           <Typography variant="overline" color="text.secondary">
-            {user ? "Account" : "Welcome"}
+            {user ? `${mobileAccountName} (${mobileEmailName})` : "Welcome"}
           </Typography>
           {user ? (
             <Stack spacing={1.25} mt={1.5}>
-              <Typography fontWeight={600}>{mobileAccountName}</Typography>
+              
               <Button
                 variant="outlined"
                 onClick={() => {
@@ -90,10 +89,10 @@ const MobileMenu = ({
                   onClose();
                 }}
               >
-                Account settings
+                Settings
               </Button>
               <Button
-                variant="text"
+                variant="outlined"
                 color="error"
                 onClick={() => {
                   onLogout();

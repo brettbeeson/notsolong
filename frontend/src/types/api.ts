@@ -2,7 +2,7 @@ export type TitleCategory = "book" | "movie" | "podcast" | "speech" | "other";
 
 export interface User {
   email: string;
-  display_name?: string | null;
+  username?: string | null;
 }
 
 export interface Title {
@@ -37,7 +37,7 @@ export interface Tokens {
   refresh: string;
 }
 
-export interface RegisterResponse {
+export interface AuthSession {
   user: User;
   tokens: Tokens;
 }

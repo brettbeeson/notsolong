@@ -1,3 +1,5 @@
 {
-    "python-envs.pythonProjects": []
+    "python-envs.pythonProjects": [],
+    // Using uv means we manage the environment activation ourselves
+    "python.terminal.activateEnvironment": false,
 }

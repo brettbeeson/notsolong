@@ -16,6 +16,8 @@ REMOTE_IMAGE_PATH := /tmp/notsolong-images.tar
 
 .PHONY: podman-build podman-up podman-down podman-logs podman-seed run podman-ship
 
+.ONESHELL:
+
 help:
 	
 	@echo "Build and deployment"
@@ -49,7 +51,11 @@ podman-seed:
 	$(COMPOSE) exec web python manage.py createuser
 	$(COMPOSE) exec web python manage.py seed --force
 
+
+deploy_env ?= prod
+
 deploy:  podman-build
+	if [ "$$ENV" != "prod" ]; then echo "ENV is not set to prod. Aborting deploy."; exit 1; fi
 	@echo "Exporting compose image/s to $(EXPORT_TAR)"
 	@mkdir -p $(dir $(EXPORT_TAR))
 	@rm -f $(EXPORT_TAR) || true  # don't fail if the file doesn't exist

@@ -1,8 +1,8 @@
 import type { User } from "../types/api";
 
-export const getDisplayName = (user: Pick<User, "display_name" | "email">) => {
-  if (user.display_name && user.display_name.trim().length > 0) {
-    return user.display_name;
+export const getDisplayName = (user: Pick<User, "username" | "email">) => {
+  if (user.username && user.username.trim().length > 0) {
+    return user.username;
   }
   if (user.email) {
     const [local] = user.email.split("@");

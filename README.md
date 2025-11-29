@@ -70,7 +70,7 @@ This document defines the entire architecture for backend (Django + DRF + JWT) a
 
 ### **User**
 
-Use the custom `accounts.User` model: the email address is the primary key and `USERNAME_FIELD`, passwords are unchanged, and `display_name` is optional. There is no `username` column anywhere in the app.
+Use the custom `accounts.User` model: the email address is the primary key and `USERNAME_FIELD`, passwords are unchanged, and `username` is an optional profile field.
 
 ---
 
@@ -129,7 +129,7 @@ Base path: `/api/`
 | POST   | `/api/auth/token/refresh` | New access token             |
 | POST   | `/api/auth/register/`     | Optional simple registration |
 
-Registration accepts `{ "email", "password", "display_name"? }`; the response returns the serialized user (email + display_name) and the token pair.
+Registration accepts `{ "email", "password", "username"? }`; the response returns the serialized user (email + username) and the token pair.
 
 ---
 
