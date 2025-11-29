@@ -16,6 +16,16 @@ const theme = createTheme({
     error: {
       main: "#ff2975",
     },
+    text: {
+      primary: "#1d1f2e",
+      secondary: "#9aa0c2",
+    },
+    divider: "#e1e4f5",
+    grey: {
+      100: "#f6f7fc",
+      200: "#e1e4f5",
+      300: "#c7cce7",
+    },
   },
   shape: {
     borderRadius: 12,

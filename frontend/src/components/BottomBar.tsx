@@ -1,7 +1,7 @@
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import FilterAltRoundedIcon from "@mui/icons-material/FilterAltRounded";
-import { Box, Button, Menu, MenuItem, Paper } from "@mui/material";
+import { AppBar, BottomNavigation, BottomNavigationAction, Menu, MenuItem, Toolbar } from "@mui/material";
 import { useEffect, useState } from "react";
 
 import { CATEGORY_OPTIONS } from "../constants/categories";
@@ -14,6 +14,7 @@ interface BottomBarProps {
   disableNext?: boolean;
   category: TitleCategory | "";
   onCategoryChange: (value: TitleCategory | "") => void;
+  nextExhausted?: boolean;
 }
 
 const useVisualViewportOffset = () => {
@@ -45,7 +46,7 @@ const useVisualViewportOffset = () => {
   return offset;
 };
 
-const BottomBar = ({ onBack, onNext, disableBack, disableNext, category, onCategoryChange }: BottomBarProps) => {
+const BottomBar = ({ onBack, onNext, disableBack, disableNext, category, onCategoryChange, nextExhausted = false }: BottomBarProps) => {
   const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
   const viewportOffset = useVisualViewportOffset();
   const selectedLabel = CATEGORY_OPTIONS.find((option) => option.value === category)?.label ?? "All";
@@ -55,62 +56,57 @@ const BottomBar = ({ onBack, onNext, disableBack, disableNext, category, onCateg
   const transformStyle = viewportOffset ? { transform: `translateY(-${viewportOffset}px)` } : undefined;
 
   return (
-    <Paper
-      role="toolbar"
-      aria-label="Mobile navigation bar"
-      elevation={12}
-      sx={{
-        position: "fixed",
-        left: 16,
-        right: 16,
-        bottom: "calc(env(safe-area-inset-bottom, 0px) + 0.85rem)",
-        width: "auto",
-        maxWidth: 520,
-        margin: "0 auto",
-        padding: 1,
-        borderRadius: 4,
-        backdropFilter: "blur(18px)",
-        backgroundColor: "rgba(255,255,255,0.92)",
-        border: "1px solid rgba(63, 42, 252, 0.08)",
-        boxShadow: "0 10px 26px rgba(15,13,36,0.22)",
-        boxSizing: "border-box",
-        zIndex: (theme) => theme.zIndex.modal + 1,
-      }}
+    <AppBar
+      position="fixed"
+      color="default"
+      elevation={6}
       style={transformStyle}
+      sx={{
+        top: "auto",
+        bottom: "calc(env(safe-area-inset-bottom, 0px) + 0.25rem)",
+        backgroundColor: (theme) => theme.palette.background.paper,
+      }}
     >
-      <Box display="grid" gridTemplateColumns="auto 1fr auto" alignItems="center" columnGap={1.25}>
-        <Button
-          variant="outlined"
-          color="primary"
-          onClick={onBack}
-          disabled={disableBack}
-          aria-label="Show previous title"
-          sx={{ borderRadius: "50%", minWidth: 0, width: 52, height: 52, p: 0 }}
+      <Toolbar disableGutters sx={{ justifyContent: "center" }}>
+        <BottomNavigation
+          showLabels
+          sx={(theme) => ({
+            width: "min(520px, 100%)",
+            backgroundColor: "transparent",
+            "& .MuiBottomNavigationAction-root": {
+              color: theme.palette.text.primary,
+              fontWeight: 600,
+              "&.Mui-disabled": {
+                color: theme.palette.text.disabled,
+              },
+              "& .MuiBottomNavigationAction-label": {
+                fontSize: "0.85rem",
+              },
+            },
+          })}
         >
-          <ArrowBackRoundedIcon />
-        </Button>
-        <Button
-          variant="outlined"
-          color="primary"
-          startIcon={<FilterAltRoundedIcon />}
-          onClick={(event) => setFilterAnchor(event.currentTarget)}
-          aria-haspopup="menu"
-          aria-expanded={Boolean(filterAnchor)}
-          sx={{ justifySelf: "center" }}
-        >
-          {selectedLabel}
-        </Button>
-        <Button
-          variant="outlined"
-          color="primary"
-          onClick={onNext}
-          disabled={disableNext}
-          aria-label="Show next title"
-          sx={{ borderRadius: "50%", minWidth: 0, width: 52, height: 52, p: 0 }}
-        >
-          <ArrowForwardRoundedIcon />
-        </Button>
-      </Box>
+          <BottomNavigationAction
+            label="Back"
+            icon={<ArrowBackRoundedIcon />}
+            onClick={onBack}
+            disabled={disableBack}
+          />
+          <BottomNavigationAction
+            label={selectedLabel}
+            icon={<FilterAltRoundedIcon />}
+            onClick={(event) => setFilterAnchor(event.currentTarget)}
+          />
+          <BottomNavigationAction
+            label="Next"
+            icon={<ArrowForwardRoundedIcon />}
+            onClick={onNext}
+            disabled={disableNext}
+            sx={(theme) => ({
+              color: nextExhausted ? theme.palette.text.disabled : undefined,
+            })}
+          />
+        </BottomNavigation>
+      </Toolbar>
       <Menu
         anchorEl={filterAnchor}
         open={Boolean(filterAnchor)}
@@ -130,7 +126,7 @@ const BottomBar = ({ onBack, onNext, disableBack, disableNext, category, onCateg
           </MenuItem>
         ))}
       </Menu>
-    </Paper>
+    </AppBar>
   );
 };
 

@@ -1,3 +1,4 @@
+import { Box, Typography } from "@mui/material";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
 
 declare global {
@@ -117,10 +118,19 @@ const TurnstileWidget = forwardRef<TurnstileHandle, TurnstileWidgetProps>(
     }, [action, onTokenChange, theme, size]);
 
     if (!siteKey) {
-      return <p className="turnstile-missing-note">Verification unavailable.</p>;
+      return (
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          textAlign="center"
+          sx={{ minHeight: 65, display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
+          Verification unavailable.
+        </Typography>
+      );
     }
 
-    return <div className="turnstile-slot" ref={containerRef} />;
+    return <Box ref={containerRef} sx={{ minHeight: 65 }} />;
   }
 );
 

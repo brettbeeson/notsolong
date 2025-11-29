@@ -18,25 +18,19 @@ warnings.filterwarnings(
     module=r"^dj_rest_auth.*$",
 )
 
-# # Read .env.<ENV> into `env`
-# ENV_NAME = os.environ["ENV"]  # fails if not set
+#
+# Do not read the .env file automatically here.
+# Instead, we rely on the environment being set up externally,
+#
 env = environ.Env()
-# env_file = BASE_DIR / f".env.{ENV_NAME}"
-# environ.Env.read_env(env_file)
 
-FRONTEND_DIST_DIR = Path(
-    env(
-        "FRONTEND_DIST_DIR",
-        default=str(BASE_DIR / "frontend" / "dist"),
-    )
-)
-
+FRONTEND_DIST_DIR = Path(env("FRONTEND_DIST_DIR"))
 
 SITE_ID = 1
 # not yet used, but may be useful later
 SITE_URL = env("DJANGO_SITE_URL", default="http://localhost:8000")
 
-SECRET_KEY = env("DJANGO_SECRET_KEY", default="change-me-in-prod")
+SECRET_KEY = env("DJANGO_SECRET_KEY")
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])

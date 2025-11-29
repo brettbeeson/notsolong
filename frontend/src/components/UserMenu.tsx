@@ -2,6 +2,7 @@ import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import {
   Avatar,
   Box,
+  Button,
   Divider,
   IconButton,
   Menu,
@@ -13,6 +14,7 @@ import { useState } from "react";
 
 import type { User } from "../types/api";
 import { getDisplayName } from "../utils/user";
+import { attentionPulse } from "../theme/animations";
 
 interface UserMenuProps {
   user: User;
@@ -34,7 +36,7 @@ const UserMenu = ({ user, onAccount, onLogout, onAddTitle, highlightAddTitle = f
         color="primary"
         onClick={(event) => setAnchorEl(event.currentTarget)}
         aria-label="Open user menu"
-        className={highlightAddTitle ? "attention-pulse" : undefined}
+        sx={{ animation: highlightAddTitle ? `${attentionPulse} 1.3s ease-out 2` : undefined }}
       >
         <MenuRoundedIcon />
       </IconButton>
@@ -89,15 +91,19 @@ const UserMenu = ({ user, onAccount, onLogout, onAddTitle, highlightAddTitle = f
           Settings
         </MenuItem>
         
-        <Divider   />
-        <MenuItem
-          onClick={() => {
-            handleClose();
-            onLogout();
-          }}
-         sx={{ color: "error.main" }}
-        >
-          Log out
+        <Divider />
+        <MenuItem disableGutters disableRipple sx={{ px: 2, py: 1 }}>
+          <Button
+            variant="outlined"
+            color="error"
+            fullWidth
+            onClick={() => {
+              handleClose();
+              onLogout();
+            }}
+          >
+            Log out
+          </Button>
         </MenuItem>
         
       </Menu>

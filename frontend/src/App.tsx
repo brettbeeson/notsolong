@@ -1,7 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isAxiosError } from "axios";
 import type { PointerEvent as ReactPointerEvent } from "react";
-import { Box, Stack, useMediaQuery, useTheme } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  Container,
+  IconButton,
+  Link,
+  Stack,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
+import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
+import { attentionPulse, slideBackward, slideForward } from "./theme/animations";
 
 import "./App.css";
 import {
@@ -49,6 +62,11 @@ const detectSwipeCapability = () => {
 function App() {
   const theme = useTheme();
   const isDesktopNavVisible = useMediaQuery(theme.breakpoints.up("md"));
+  const borderStrong = theme.palette.grey[300];
+  const surfaceColor = theme.palette.background.paper;
+  const textPrimary = theme.palette.text.primary;
+  const textSecondary = theme.palette.text.secondary;
+  const bottomBarHeight = "max(30px, 8vh)";
   const { user, logout, updateProfile, refreshProfile } = useAuth();
   const historyIndex = useHistoryStore((state) => state.index);
   const historyItems = useHistoryStore((state) => state.items);
@@ -459,37 +477,91 @@ useEffect(() => () => {
     endSwipe(event.clientX);
   };
 
-  const baseStageClass = "title-viewer-stage";
-  const stageAnimationClass = isTitleAnimating
-    ? transitionDirection === "backward"
-      ? "title-slide-backward"
-      : "title-slide-forward"
-    : "";
-  const stageClassName = [baseStageClass, stageAnimationClass].filter(Boolean).join(" ");
   const closeMobileMenu = () => setMobileMenuOpen(false);
   const disableBackNav = !bundle || !canGoBack || loading;
   const disableNextNav = !bundle || loading || (!canGoForward && isForwardExhausted);
   const isOverlayOpen =
     isMobileMenuOpen || isRecapDialogOpen || isAddTitleOpen || isAuthOpen || isAccountOpen;
-  const mobileMenuButtonClasses = ["mobile-menu-button"];
-  if (addTitleHintActive) {
-    mobileMenuButtonClasses.push("attention-pulse");
-  }
+  const mobileMenuButtonAnimation = addTitleHintActive
+    ? `${attentionPulse} 1.3s ease-out 2`
+    : undefined;
   const emptyCategoryLabel =
     emptyCategory !== null
       ? CATEGORY_OPTIONS.find((option) => option.value === emptyCategory)?.label ?? "All"
       : null;
+  const mobileContentPadding = `calc(2.5rem + ${bottomBarHeight} + env(safe-area-inset-bottom, 0px) + 1.5rem)`;
+  const stageAnimation = isTitleAnimating
+    ? `${transitionDirection === "backward" ? slideBackward : slideForward} 0.85s cubic-bezier(0.16, 1, 0.3, 1)`
+    : undefined;
   
   return (
-    <div className="app-shell">
-      <header className="app-header">
-        
-          <a href="/"><img className="app-logo" src={logoUrl} alt="Not So Long logo" /></a>
-          <div className="app-title-group">
-            <h1 className="app-title">Not So Long</h1>
-            <p className="tagline">Find the best recap: as short as possible, but no shorter!</p>
-          </div>
-        <div className="auth-actions">
+    <Container
+      component="main"
+      maxWidth="lg"
+      disableGutters
+      sx={{
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        gap: 3,
+        mx: "auto",
+        py: { xs: "1.5rem", md: "2.5rem" },
+        px: { xs: "1rem", sm: "clamp(1rem, 4vw, 3rem)" },
+        pb: { xs: mobileContentPadding, md: "3rem" },
+      }}
+    >
+      <Stack
+        component="header"
+        direction="row"
+        alignItems="flex-start"
+        justifyContent="space-between"
+        flexWrap="wrap"
+        sx={{ gap: { xs: 1.5, md: 2 } }}
+      >
+        <Stack direction="row" spacing={1.25} alignItems="center" flexGrow={1} minWidth={0}>
+          <Link
+            href="/"
+            underline="none"
+            sx={{ display: "inline-flex", alignItems: "center", gap: 1, color: "inherit" }}
+          >
+            <Box
+              component="img"
+              src={logoUrl}
+              alt="Not So Long logo"
+              sx={{ width: 32, height: 32, borderRadius: 1 }}
+            />
+          </Link>
+          <Stack spacing={0.5} minWidth={0}>
+            <Typography
+              variant="h4"
+              component="h1"
+              sx={{
+                fontSize: { xs: "1.5rem", md: "clamp(1.5rem, 3vw, 2.2rem)" },
+                color: "#1d1f2e",
+                lineHeight: 1.2,
+              }}
+            >
+              Not So Long
+            </Typography>
+            <Typography
+              variant="body2"
+              component="p"
+              sx={{
+                color: textSecondary,
+                display: { xs: "none", md: "block" },
+                mb: 0,
+              }}
+            >
+              Find the best recap: as short as possible, but no shorter!
+            </Typography>
+          </Stack>
+        </Stack>
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          sx={{ display: { xs: "none", md: "flex" } }}
+        >
           {user ? (
             <UserMenu
               user={user}
@@ -499,23 +571,47 @@ useEffect(() => () => {
               highlightAddTitle={addTitleHintActive}
             />
           ) : (
-            <button className="secondary" onClick={() => setAuthOpen(true)}>
+            <Button
+              variant="outlined"
+              color="inherit"
+              onClick={() => setAuthOpen(true)}
+              sx={{
+                backgroundColor: theme.palette.grey[200],
+                borderColor: "transparent",
+                borderRadius: "0.75rem",
+                color: textPrimary,
+                fontWeight: 600,
+                px: 2.5,
+                py: 0.75,
+                textTransform: "none",
+                "&:hover": {
+                  backgroundColor: borderStrong,
+                  borderColor: "transparent",
+                },
+              }}
+            >
               Log in
-            </button>
+            </Button>
           )}
-        </div>
-        <button
-          type="button"
-          className={mobileMenuButtonClasses.join(" ")}
+        </Stack>
+        <IconButton
           aria-label="Open menu"
           aria-expanded={isMobileMenuOpen}
           onClick={() => setMobileMenuOpen(true)}
+          sx={{
+            display: { xs: "inline-flex", md: "none" },
+            border: `1px solid ${borderStrong}`,
+            backgroundColor: surfaceColor,
+            borderRadius: "0.9rem",
+            p: 1,
+            color: textPrimary,
+            animation: mobileMenuButtonAnimation,
+            "&:hover": { backgroundColor: surfaceColor },
+          }}
         >
-          <span />
-          <span />
-          <span />
-        </button>
-      </header>
+          <MenuRoundedIcon />
+        </IconButton>
+      </Stack>
       <MobileMenu
         isOpen={isMobileMenuOpen}
         user={user}
@@ -526,7 +622,12 @@ useEffect(() => () => {
         onAddTitle={handleAddTitleRequest}
       />
 
-      <Box className="category-filter-desktop">
+      <Box
+        sx={{
+          width: "100%",
+          display: { xs: "none", md: "block" },
+        }}
+      >
         <Stack
           direction={{ xs: "column", md: "row" }}
           spacing={2}
@@ -546,16 +647,35 @@ useEffect(() => () => {
         </Stack>
       </Box>
 
-      {error && <div className="error-banner">{error}</div>}
+      {error && (
+        <Alert severity="error" sx={{ borderRadius: 2 }}>
+          {error}
+        </Alert>
+      )}
 
-      <div
-        className={stageClassName}
+      <Box
+        sx={{
+          position: "relative",
+          px: { xs: 0, md: "1.5rem" },
+          display: "flex",
+          justifyContent: "center",
+        }}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={cancelSwipe}
         onPointerCancel={cancelSwipe}
       >
-        <div className="title-viewer-shell">
+        <Box
+          sx={{
+            maxWidth: 960,
+            width: "100%",
+            mx: "auto",
+            display: "flex",
+            justifyContent: "center",
+            willChange: "transform, opacity",
+            animation: stageAnimation,
+          }}
+        >
           <TitleViewer
             bundle={bundle}
             loading={loading}
@@ -571,8 +691,8 @@ useEffect(() => () => {
             onPromptAddTitle={promptAddTitleHint}
             emptyCategoryLabel={emptyCategoryLabel}
           />
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {!isDesktopNavVisible && !isOverlayOpen && (
         <BottomBar
@@ -582,6 +702,7 @@ useEffect(() => () => {
           disableNext={disableNextNav}
           category={category}
           onCategoryChange={handleCategoryChange}
+          nextExhausted={!canGoForward && isForwardExhausted}
         />
       )}
 
@@ -626,7 +747,7 @@ useEffect(() => () => {
           }}
         />
       )}
-    </div>
+    </Container>
   );
 }
 

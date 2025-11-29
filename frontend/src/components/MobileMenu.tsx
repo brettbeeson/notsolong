@@ -62,6 +62,7 @@ const MobileMenu = ({
               
               <Button
                 variant="outlined"
+                fullWidth
                 onClick={() => {
                   onOpenAccount();
                   onClose();
@@ -72,6 +73,7 @@ const MobileMenu = ({
               <Button
                 variant="outlined"
                 color="error"
+                fullWidth
                 onClick={() => {
                   onLogout();
                   onClose();
