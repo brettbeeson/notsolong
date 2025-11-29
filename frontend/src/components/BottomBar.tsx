@@ -1,14 +1,27 @@
-import { Paper } from "@mui/material";
-import NavigationButtons from "./NavigationButtons";
+import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import FilterAltRoundedIcon from "@mui/icons-material/FilterAltRounded";
+import { Box, Button, Menu, MenuItem, Paper } from "@mui/material";
+import { useState } from "react";
+
+import { CATEGORY_OPTIONS } from "../constants/categories";
+import type { TitleCategory } from "../types/api";
 
 interface BottomBarProps {
   onBack: () => void;
   onNext: () => void;
   disableBack?: boolean;
   disableNext?: boolean;
+  category: TitleCategory | "";
+  onCategoryChange: (value: TitleCategory | "") => void;
 }
 
-const BottomBar = ({ onBack, onNext, disableBack, disableNext }: BottomBarProps) => {
+const BottomBar = ({ onBack, onNext, disableBack, disableNext, category, onCategoryChange }: BottomBarProps) => {
+  const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
+  const selectedLabel = CATEGORY_OPTIONS.find((option) => option.value === category)?.label ?? "All";
+
+  const closeFilterMenu = () => setFilterAnchor(null);
+
   return (
     <Paper
       role="toolbar"
@@ -29,15 +42,58 @@ const BottomBar = ({ onBack, onNext, disableBack, disableNext }: BottomBarProps)
         zIndex: (theme) => theme.zIndex.modal + 1,
       }}
     >
-      <NavigationButtons
-        onBack={onBack}
-        onNext={onNext}
-        disableBack={disableBack}
-        disableNext={disableNext}
-        fullWidth
-        iconOnly
-        variant="outlined"
-      />
+      <Box display="grid" gridTemplateColumns="auto 1fr auto" alignItems="center" columnGap={1.25}>
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={onBack}
+          disabled={disableBack}
+          aria-label="Show previous title"
+          sx={{ borderRadius: "50%", minWidth: 0, width: 52, height: 52, p: 0 }}
+        >
+          <ArrowBackRoundedIcon />
+        </Button>
+        <Button
+          variant="outlined"
+          color="primary"
+          startIcon={<FilterAltRoundedIcon />}
+          onClick={(event) => setFilterAnchor(event.currentTarget)}
+          aria-haspopup="menu"
+          aria-expanded={Boolean(filterAnchor)}
+          sx={{ justifySelf: "center" }}
+        >
+          {selectedLabel}
+        </Button>
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={onNext}
+          disabled={disableNext}
+          aria-label="Show next title"
+          sx={{ borderRadius: "50%", minWidth: 0, width: 52, height: 52, p: 0 }}
+        >
+          <ArrowForwardRoundedIcon />
+        </Button>
+      </Box>
+      <Menu
+        anchorEl={filterAnchor}
+        open={Boolean(filterAnchor)}
+        onClose={closeFilterMenu}
+        MenuListProps={{ "aria-label": "Choose category" }}
+      >
+        {CATEGORY_OPTIONS.map((option) => (
+          <MenuItem
+            key={`mobile-filter-${option.value || "all"}`}
+            selected={option.value === category}
+            onClick={() => {
+              onCategoryChange(option.value);
+              closeFilterMenu();
+            }}
+          >
+            {option.label}
+          </MenuItem>
+        ))}
+      </Menu>
     </Paper>
   );
 };

@@ -12,7 +12,6 @@ import {
 } from "@mui/material";
 
 import type { User } from "../types/api";
-import { getDisplayName } from "../utils/user";
 import { getErrorMessage } from "../utils/errors";
 
 interface AccountPanelProps {
@@ -30,7 +29,7 @@ const AccountPanel = ({ open, user, onClose, onSave }: AccountPanelProps) => {
   const [status, setStatus] = useState<"idle" | "saving">("idle");
   const [error, setError] = useState<string | null>(null);
 
-  const userKey = user ? `${user.id ?? "anon"}:${user.username ?? ""}:${user.email ?? ""}` : "guest";
+  const userKey = user ? `${user.email ?? "anon"}:${user.username ?? ""}:${user.email ?? ""}` : "guest";
   const draftValues = draft?.key === userKey ? draft.values : null;
   const username = draftValues?.username ?? user?.username ?? "";
   const email = draftValues?.email ?? user?.email ?? "";

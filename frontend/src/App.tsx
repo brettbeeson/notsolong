@@ -25,6 +25,7 @@ import { useHistoryStore } from "./store/useHistoryStore";
 import type { Recap, TitleBundle, TitleCategory } from "./types/api";
 import { getErrorMessage } from "./utils/errors";
 import logoUrl from "./assets/favicon.ico";
+import { CATEGORY_OPTIONS } from "./constants/categories";
 
 type PasswordResetParams = {
   uid: string;
@@ -76,6 +77,7 @@ function App() {
   const [isForwardExhausted, setForwardExhausted] = useState(false);
   const [resetParams, setResetParams] = useState<PasswordResetParams | null>(null);
   const [addTitleHintActive, setAddTitleHintActive] = useState(false);
+  const [emptyCategory, setEmptyCategory] = useState<TitleCategory | "" | null>(null);
 
   const isAuthenticated = Boolean(user);
 
@@ -185,11 +187,16 @@ useEffect(() => () => {
     return true;
   }, [user]);
 
-  const handleCategoryChange = useCallback((value: TitleCategory | "") => {
-    setCategory(value);
-    setMobileMenuOpen(false);
-    setForwardExhausted(false);
-  }, []);
+  const handleCategoryChange = useCallback(
+    (value: TitleCategory | "") => {
+      setCategory(value);
+      setMobileMenuOpen(false);
+      setForwardExhausted(false);
+      resetHistory();
+      setEmptyCategory(null);
+    },
+    [resetHistory, setEmptyCategory]
+  );
 
   const openCreateRecap = useCallback(() => {
     if (!requireAuth()) return;
@@ -243,6 +250,7 @@ useEffect(() => () => {
         syncVotesFromBundle(normalized);
         setError(null);
         setForwardExhausted(false);
+        setEmptyCategory(null);
         if (shouldReset) {
           resetHistory(normalized.title.id);
         } else {
@@ -255,6 +263,7 @@ useEffect(() => () => {
           // setError("No titles available. Add a new title.");
           resetHistory();
           setForwardExhausted(true);
+          setEmptyCategory(category || "");
         } else {
           setError(getErrorMessage(err));
         }
@@ -262,7 +271,7 @@ useEffect(() => () => {
         setLoading(false);
       }
     },
-    [category, normalizeBundle, recordHistory, resetHistory, syncVotesFromBundle]
+    [category, normalizeBundle, recordHistory, resetHistory, setEmptyCategory, syncVotesFromBundle]
   );
 
   useEffect(() => {
@@ -452,6 +461,10 @@ useEffect(() => () => {
   if (addTitleHintActive) {
     mobileMenuButtonClasses.push("attention-pulse");
   }
+  const emptyCategoryLabel =
+    emptyCategory !== null
+      ? CATEGORY_OPTIONS.find((option) => option.value === emptyCategory)?.label ?? "All"
+      : null;
   
   return (
     <div className="app-shell">
@@ -497,8 +510,6 @@ useEffect(() => () => {
         onLogout={logout}
         onOpenAuth={() => setAuthOpen(true)}
         onAddTitle={handleAddTitleRequest}
-        category={category}
-        onCategoryChange={handleCategoryChange}
       />
 
       <Box className="category-filter-desktop">
@@ -544,6 +555,7 @@ useEffect(() => () => {
               void handleDeleteRecap(quote);
             }}
             onPromptAddTitle={promptAddTitleHint}
+            emptyCategoryLabel={emptyCategoryLabel}
           />
         </div>
       </div>
@@ -554,6 +566,8 @@ useEffect(() => () => {
           onNext={handleNext}
           disableBack={disableBackNav}
           disableNext={disableNextNav}
+          category={category}
+          onCategoryChange={handleCategoryChange}
         />
       )}
 

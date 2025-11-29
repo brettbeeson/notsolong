@@ -58,45 +58,46 @@ const UserMenu = ({ user, onAccount, onLogout, onAddTitle, highlightAddTitle = f
             )}
           </Box>
         </Box>
-        <Divider sx={{ my: 1 }} />
+        <Divider sx={{ my: 1 }}  />
         <MenuItem
           onClick={() => {
             handleClose();
             onAddTitle();
           }}
-          selected={highlightAddTitle}
           sx={{
             gap: 1,
             borderRadius: 1,
             bgcolor: highlightAddTitle ? "action.selected" : undefined,
-            color: highlightAddTitle ? "primary.main" : undefined,
+            color: "primary.main" ,
           }}
         >
-          <ListItemIcon sx={{ minWidth: 36, color: "inherit" }}>
-            <AddCircleOutlineRoundedIcon fontSize="small" />
-          </ListItemIcon>
+          
+          
+          
           <ListItemText
             primary="Add a Title"
             secondary="Share the next great recap"
             
           />
         </MenuItem>
-        <Divider sx={{ my: 1 }} />
+        <Divider  variant="middle" />
         <MenuItem
           onClick={() => {
             handleClose();
             onAccount();
           }}
+          sx={{ color: "primary.main" }}
         >
           Settings
         </MenuItem>
         
-        <Divider sx={{ my: 1 }} />
+        <Divider   />
         <MenuItem
           onClick={() => {
             handleClose();
             onLogout();
           }}
+         sx={{ color: "error.main" }}
         >
           Log out
         </MenuItem>

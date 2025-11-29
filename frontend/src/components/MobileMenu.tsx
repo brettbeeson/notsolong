@@ -1,17 +1,8 @@
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import {
-  Box,
-  Button,
-  
-  Drawer,
-  IconButton,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Drawer, IconButton, Stack, Typography } from "@mui/material";
 
-import type { TitleCategory, User } from "../types/api";
+import type { User } from "../types/api";
 import { getDisplayName } from "../utils/user";
-import CategoryFilter from "./CategoryFilter";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -21,8 +12,6 @@ interface MobileMenuProps {
   onLogout: () => void;
   onOpenAuth: () => void;
   onAddTitle: () => void;
-  category: TitleCategory | "";
-  onCategoryChange: (value: TitleCategory | "") => void;
 }
 
 const MobileMenu = ({
@@ -33,8 +22,6 @@ const MobileMenu = ({
   onLogout,
   onOpenAuth,
   onAddTitle,
-  category,
-  onCategoryChange,
 }: MobileMenuProps) => {
   const mobileAccountName = user ? getDisplayName(user) : "";
   const mobileEmailName = user && user.email ? user.email : "";
@@ -65,15 +52,6 @@ const MobileMenu = ({
             </Button>
           </Box>
         )}
-
-        <Box>
-          <Typography variant="overline" color="text.secondary">
-            Filters
-          </Typography>
-          <Box mt={1.5}>
-            <CategoryFilter variant="menu" value={category} onChange={onCategoryChange} />
-          </Box>
-        </Box>
 
         <Box>
           <Typography variant="overline" color="text.secondary">

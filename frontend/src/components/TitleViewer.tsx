@@ -26,6 +26,7 @@ interface TitleViewerProps {
   onEditRecap: (quote: Recap) => void;
   onDeleteRecap: (quote: Recap) => void;
   onPromptAddTitle?: () => void;
+  emptyCategoryLabel?: string | null;
 }
 
 const TitleViewer = ({
@@ -39,6 +40,7 @@ const TitleViewer = ({
   onEditRecap,
   onDeleteRecap,
   onPromptAddTitle,
+  emptyCategoryLabel,
 }: TitleViewerProps) => {
   useEffect(() => {
     if (!bundle && !loading) {
@@ -56,9 +58,13 @@ const TitleViewer = ({
   }
 
   if (!bundle) {
+    const noTitleMessage = emptyCategoryLabel && emptyCategoryLabel !== "All"
+      ? `No ${emptyCategoryLabel.toLowerCase()} titles yet. Try another filter or add the first one!`
+      : "No titles yet. Be the first to add one!";
+
     return (
       <Paper sx={{ p: 4 }}>
-        <Typography>No Titles yet. Be the first to add one!</Typography>
+        <Typography>{noTitleMessage}</Typography>
       </Paper>
     );
   }
