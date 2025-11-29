@@ -32,7 +32,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     """Custom user that authenticates via email."""
 
     email = models.EmailField(primary_key=True)
-    display_name = models.CharField(max_length=150, blank=True)
+    username = models.CharField(max_length=150, blank=True)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(default=timezone.now)
@@ -43,4 +43,4 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     def __str__(self) -> str:  # pragma: no cover - trivial
-        return self.display_name or self.email
+        return self.username or self.email

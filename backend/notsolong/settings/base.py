@@ -1,6 +1,6 @@
 """Base Django settings shared across environments."""
 
-import os
+import warnings
 from datetime import timedelta
 from pathlib import Path
 
@@ -8,6 +8,15 @@ import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 APPS_DIR = BASE_DIR / "notsolong"
+
+warnings.simplefilter("always", DeprecationWarning)
+
+warnings.filterwarnings(
+    "ignore",
+    message=r".*is deprecated.*",
+    category=UserWarning,
+    module=r"^dj_rest_auth.*$",
+)
 
 # # Read .env.<ENV> into `env`
 # ENV_NAME = os.environ["ENV"]  # fails if not set
@@ -23,11 +32,16 @@ FRONTEND_DIST_DIR = Path(
 )
 CORS_ALLOW_ALL_ORIGINS = True
 
+SITE_ID = 1
+
 SECRET_KEY = env("DJANGO_SECRET_KEY", default="change-me-in-prod")
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
 TURNSTILE_SECRET_KEY = env("TURNSTILE_SECRET_KEY", default="")
+GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID", default="")
+GOOGLE_CLIENT_SECRET = env("GOOGLE_CLIENT_SECRET", default="")
+
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -35,10 +49,20 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "django.contrib.sites",
     "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
     "rest_framework",
+    "rest_framework.authtoken",
     "corsheaders",
+    # auth stack:
+    "dj_rest_auth",
+    "dj_rest_auth.registration",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
+    # auth stack end
     "accounts",
     "api",
 ]
@@ -46,6 +70,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -119,12 +144,32 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=365),
     "ROTATE_REFRESH_TOKENS": False,
     "USER_ID_FIELD": "email",
 }
 
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
+ACCOUNT_LOGIN_METHODS = {"email"}
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "username"]
+ACCOUNT_USER_MODEL_USERNAME_FIELD = "username"
+# options are "mandatory", "optional", "none"
+ACCOUNT_EMAIL_VERIFICATION = "none"
+
+
+REST_AUTH = {
+    "USE_JWT": True,
+    "TOKEN_MODEL": None,
+    "USER_DETAILS_SERIALIZER": "accounts.serializers.UserSerializer",
+    "LOGIN_SERIALIZER": "accounts.serializers.TurnstileLoginSerializer",
+    "REGISTER_SERIALIZER": "accounts.serializers.AllauthRegisterSerializer",
+}
+LOGIN_REDIRECT_URL = "/"
 
 LOGGING = {
     "version": 1,

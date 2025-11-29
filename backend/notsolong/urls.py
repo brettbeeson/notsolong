@@ -15,16 +15,31 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path, re_path
 
-from .views import SPAView, SchemaView
+from accounts.views import DebugLoginView
 
-urlpatterns = [
+from .views import SchemaView, SPAView
+
+urlpatterns = []
+
+if settings.DEBUG:
+    # Must be before as django uses first match
+    urlpatterns = [
+        path("api/auth/login/", DebugLoginView.as_view(), name="rest_login"),
+    ]
+
+urlpatterns += [
     path("admin/", admin.site.urls),
     path("api/", include("api.urls")),
-    path("schema-apple.yml", SchemaView.as_view(), name="schema"),
+    path("api/auth/", include("dj_rest_auth.urls")),
+    path("api/auth/registration/", include("dj_rest_auth.registration.urls")),
+    path("accounts/", include("allauth.urls")),  # for social auth callbacks
+    path("schema.yml", SchemaView.as_view(), name="schema"),
 ]
+
 
 urlpatterns += [
     re_path(r"^(?!admin/|api/|static/).*$", SPAView.as_view(), name="spa"),

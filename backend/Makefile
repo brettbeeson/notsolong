@@ -1,13 +1,14 @@
 SHELL := /bin/bash
 PYTHON := uv run python
 
-.PHONY: install migrate run test superuser user clean seed-demo flush schema
+.PHONY: install migrate run debug test superuser user clean seed-demo flush schema
 
 help:
 	@echo "Makefile commands:"
 	@echo "  install      Install dependencies in the virtual environment"
 	@echo "  migrate      Create and apply database migrations"
 	@echo "  run          Run the development server"
+	@echo "  debug        Run the dev server under debugpy"
 	@echo "  test         Run the test suite"
 	@echo "  schema       Generate OpenAPI schema file"
 	@echo "  superuser    Create a Django superuser (requires env vars)"
@@ -21,6 +22,9 @@ migrate:
 
 run:
 	$(PYTHON) manage.py runserver 0.0.0.0:8000
+
+debug:
+	$(PYTHON) -m debugpy --listen localhost:5678 --wait-for-client manage.py runserver 0.0.0.0:8000 --noreload
 
 test:
 	$(PYTHON) -m pytest
@@ -36,6 +40,7 @@ superuser:
 user:
 	@echo "Using DJANGO_USER_EMAIL=$(DJANGO_USER_EMAIL)"
 	@echo "Ensure DJANGO_USER_PASSWORD is set in environment"
+	@echo "Optional DJANGO_USER_USERNAME provides the profile name"
 	$(PYTHON) manage.py createuser
 
 

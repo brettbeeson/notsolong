@@ -102,7 +102,7 @@ class Command(BaseCommand):
                 Vote.objects.all().delete()
                 Recap.objects.all().delete()
                 Title.objects.all().delete()
-                User.objects.filter(email__endswith="@notsolong.io").delete()
+                User.objects.filter(email__endswith="@notsolong.com").delete()
 
             users = self._create_users()
             titles = self._create_titles(users)
@@ -119,12 +119,12 @@ class Command(BaseCommand):
     def _create_users(self):
         users = []
         for idx in range(1, TARGET_USER_COUNT + 1):
-            email = f"demo{idx:02d}@notsolong.io"
-            display_name = f"Demo User {idx}"
+            email = f"demo{idx:02d}@notsolong.com"
+            username = f"Demo User {idx}"
             user, created = User.objects.get_or_create(
                 email=email,
                 defaults={
-                    "display_name": display_name,
+                    "username": username,
                 },
             )
             changed = False
@@ -134,8 +134,8 @@ class Command(BaseCommand):
             if user.email != email:
                 user.email = email
                 changed = True
-            if not user.display_name:
-                user.display_name = display_name
+            if not user.username:
+                user.username = username
                 changed = True
             if changed:
                 user.save()

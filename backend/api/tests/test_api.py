@@ -11,7 +11,7 @@ class TitleEndpointsTests(APITestCase):
         self.user = User.objects.create_user(
             email="tester@example.com",
             password="password123",
-            display_name="Tester",
+            username="Tester",
         )
         self.title = Title.objects.create(
             name="The Matrix",
@@ -34,12 +34,12 @@ class VoteEndpointTests(APITestCase):
         self.user = User.objects.create_user(
             email="voter@example.com",
             password="password123",
-            display_name="Voter",
+            username="Voter",
         )
         self.author = User.objects.create_user(
             email="author@example.com",
             password="password123",
-            display_name="Author",
+            username="Author",
         )
         self.title = Title.objects.create(
             name="1984",
@@ -73,7 +73,7 @@ class RecapCreateTests(APITestCase):
         self.user = User.objects.create_user(
             email="authorseed@example.com",
             password="password123",
-            display_name="Seed Author",
+            username="Seed Author",
         )
         self.title = Title.objects.create(
             name="Dune",
@@ -98,7 +98,7 @@ class AuthEndpointsTests(APITestCase):
         self.user = User.objects.create_user(
             email="authuser@example.com",
             password="password123",
-            display_name="Auth User",
+            username="Auth User",
         )
 
     def test_me_endpoint_returns_user(self):

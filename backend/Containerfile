@@ -8,11 +8,12 @@ WORKDIR /app/frontend
 
 # Pass these both in during build. Env vars are *not* automatically passed from host.
 # The ${VITE_API_BASE_URL} below is *not* an env var, but a build arg
-
+ARG VITE_GOOGLE_CLIENT_ID
 ARG VITE_TURNSTILE_SITE_KEY
 # Bake into the environment for the build so Vite can pick them up
 # via import.meta.env.VITE_...
 ENV VITE_TURNSTILE_SITE_KEY=${VITE_TURNSTILE_SITE_KEY}
+ENV VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
 
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci

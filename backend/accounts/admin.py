@@ -8,13 +8,13 @@ from .models import User
 class CustomUserCreationForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ("email", "display_name")
+        fields = ("email", "username")
 
 
 class CustomUserChangeForm(UserChangeForm):
     class Meta(UserChangeForm.Meta):
         model = User
-        fields = ("email", "display_name", "is_active", "is_staff")
+        fields = ("email", "username", "is_active", "is_staff")
 
 
 @admin.register(User)
@@ -23,11 +23,11 @@ class UserAdmin(BaseUserAdmin):
 
     form = CustomUserChangeForm
     add_form = CustomUserCreationForm
-    list_display = ("email", "display_name", "is_active", "is_staff")
+    list_display = ("email", "username", "is_active", "is_staff")
     ordering = ("email",)
-    search_fields = ("email", "display_name")
+    search_fields = ("email", "username")
     fieldsets = (
-        (None, {"fields": ("email", "password", "display_name")}),
+        (None, {"fields": ("email", "password", "username")}),
         (
             "Permissions",
             {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")},
@@ -39,7 +39,7 @@ class UserAdmin(BaseUserAdmin):
             None,
             {
                 "classes": ("wide",),
-                "fields": ("email", "display_name", "password1", "password2", "is_staff", "is_superuser", "is_active"),
+                "fields": ("email", "username", "password1", "password2", "is_staff", "is_superuser", "is_active"),
             },
         ),
     )
