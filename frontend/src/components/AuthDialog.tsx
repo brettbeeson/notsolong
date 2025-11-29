@@ -14,6 +14,8 @@ import {
   Tabs,
   TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import GoogleIcon from "@mui/icons-material/Google";
 
@@ -71,6 +73,8 @@ const AuthDialog = ({
   const googleEnabled = Boolean(googleClientId);
   const [googleReady, setGoogleReady] = useState(false);
   const [googleLoadMessage, setGoogleLoadMessage] = useState<string | null>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const formatAuthError = useCallback(
     (context: "login" | "register", error: unknown) => {
@@ -573,6 +577,7 @@ const AuthDialog = ({
                 ref={turnstileRef}
                 onTokenChange={setTurnstileToken}
                 action="auth-dialog"
+                size={isMobile ? "compact" : "normal"}
               />
             </Box>
           )}

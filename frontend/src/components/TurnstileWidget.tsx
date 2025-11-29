@@ -56,12 +56,13 @@ interface TurnstileWidgetProps {
   onTokenChange: (token: string | null) => void;
   action?: string;
   theme?: "light" | "dark" | "auto";
+  size?: "normal" | "compact" | "invisible";
 }
 
 const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
 const TurnstileWidget = forwardRef<TurnstileHandle, TurnstileWidgetProps>(
-  ({ onTokenChange, action = "auth", theme = "light" }, ref) => {
+  ({ onTokenChange, action = "auth", theme = "light", size = "normal" }, ref) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const widgetIdRef = useRef<string | null>(null);
 
@@ -97,7 +98,7 @@ const TurnstileWidget = forwardRef<TurnstileHandle, TurnstileWidgetProps>(
             "error-callback": () => onTokenChange(null),
             action,
             theme,
-            size: "compact",
+            size,
           });
         } catch (error) {
           console.error("Turnstile failed to initialize", error);
@@ -113,7 +114,7 @@ const TurnstileWidget = forwardRef<TurnstileHandle, TurnstileWidgetProps>(
         }
         onTokenChange(null);
       };
-    }, [action, onTokenChange, theme]);
+    }, [action, onTokenChange, theme, size]);
 
     if (!siteKey) {
       return <p className="turnstile-missing-note">Verification unavailable.</p>;
