@@ -24,3 +24,6 @@ lint:
 
 clean:
 	rm -rf node_modules
+
+chrome:
+	chromium --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-debug &
