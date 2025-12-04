@@ -97,6 +97,11 @@ const TitleViewer = ({
   const activeIsTop = Boolean(activeRecap && top_recap && activeRecap.id === top_recap.id);
   const showTopAlert = activeIsTop && userOwnsTop;
   const recapProgressLabel = recapCount > 0 ? `Recap ${recapIndex + 1} of ${recapCount}` : "No recaps yet";
+  const recapNavButtonSx = {
+    minWidth: 0,
+    px: 1,
+    borderRadius: 2,
+  } as const;
 
   const handlePrimaryCta = () => {
     if (userQuote) {
@@ -106,17 +111,34 @@ const TitleViewer = ({
     }
   };
 
+  const categoryChip = (
+    <Chip
+      label={title.category.toUpperCase()}
+      color="primary"
+      variant="outlined"
+      size="small"
+      sx={{
+        width: "fit-content",
+        fontWeight: 600,
+        letterSpacing: 0.5,
+        borderRadius: 999,
+        fontSize: { xs: "0.62rem", md: "0.75rem" },
+        height: { xs: 22, md: 28 },
+        px: { xs: 0.75, md: 1.5 },
+      }}
+    />
+  );
+
   return (
     <Paper
       sx={{
-        p: { xs: 3, md: 4 },
+        p: { xs: 2.25, md: 4 },
         display: "flex",
         flexDirection: "column",
         minHeight: { xs: "100%", md: "auto" },
       }}
     >
-      <Stack spacing={1.5} mb={3}>
-        <Chip label={title.category.toUpperCase()} color="primary" variant="outlined" sx={{ width: "fit-content" }} />
+      <Stack spacing={{ xs: 1.125, md: 1.5 }} mb={{ xs: 2.25, md: 3 }}>
         <Stack
           direction={{ xs: "column", md: "row" }}
           spacing={1.5}
@@ -124,10 +146,22 @@ const TitleViewer = ({
           justifyContent="space-between"
           gap={2}
         >
-          <Box>
-            <Typography variant="h4" fontWeight={700} color="text.primary">
-              {title.name}
-            </Typography>
+          <Box sx={{ width: "100%" }}>
+            <Stack
+              direction={{ xs: "row", md: "column" }}
+              spacing={{ xs: 1, md: 0.5 }}
+              alignItems={{ xs: "center", md: "flex-start" }}
+            >
+              <Typography
+                variant="h4"
+                fontWeight={700}
+                color="text.primary"
+                sx={{ flexGrow: 1, lineHeight: { xs: 1.2, md: 1.3 } }}
+              >
+                {title.name}
+              </Typography>
+              {categoryChip}
+            </Stack>
             {authorName && (
               <Typography variant="subtitle1" color="text.secondary">
                 by {authorName}
@@ -140,37 +174,37 @@ const TitleViewer = ({
               spacing={1}
               alignItems="center"
               justifyContent="flex-end"
-              sx={{ width: "100%", display: { xs: "none", md: "flex" } }}
+              sx={{ width: "100%", display: { xs: "none", md: "flex" }, flexWrap: "nowrap" }}
             >
               <Button
                 variant="outlined"
                 size="small"
-                startIcon={<ArrowBackRoundedIcon fontSize="small" />}
                 onClick={onPreviousRecap}
                 disabled={disablePreviousRecap}
                 aria-label="Previous recap"
+                sx={recapNavButtonSx}
               >
-                Prev
+                <ArrowBackRoundedIcon fontSize="small" />
               </Button>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
                 {recapProgressLabel}
               </Typography>
               <Button
                 variant="outlined"
                 size="small"
-                endIcon={<ArrowForwardRoundedIcon fontSize="small" />}
                 onClick={onNextRecap}
                 disabled={disableNextRecap}
                 aria-label="Next recap"
+                sx={recapNavButtonSx}
               >
-                Next
+                <ArrowForwardRoundedIcon fontSize="small" />
               </Button>
             </Stack>
           )}
         </Stack>
       </Stack>
 
-      <Stack spacing={3} sx={{ flexGrow: 1 }}>
+      <Stack spacing={{ xs: 2.25, md: 3 }} sx={{ flexGrow: 1 }}>
         {activeRecap ? (
           <Stack spacing={2} sx={{ flexGrow: 1 }}>
             {showTopAlert && (
@@ -196,30 +230,30 @@ const TitleViewer = ({
                 spacing={1.25}
                 alignItems="center"
                 justifyContent="center"
-                sx={{ flexWrap: "wrap", display: { xs: "flex", md: "none" } }}
+                sx={{ flexWrap: "nowrap", display: { xs: "flex", md: "none" } }}
               >
                 <Button
                   variant="outlined"
                   size="small"
-                  startIcon={<ArrowBackRoundedIcon fontSize="small" />}
                   onClick={onPreviousRecap}
                   disabled={disablePreviousRecap}
                   aria-label="Previous recap"
+                  sx={recapNavButtonSx}
                 >
-                  Prev
+                  <ArrowBackRoundedIcon fontSize="small" />
                 </Button>
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
                   {recapProgressLabel}
                 </Typography>
                 <Button
                   variant="outlined"
                   size="small"
-                  endIcon={<ArrowForwardRoundedIcon fontSize="small" />}
                   onClick={onNextRecap}
                   disabled={disableNextRecap}
                   aria-label="Next recap"
+                  sx={recapNavButtonSx}
                 >
-                  Next
+                  <ArrowForwardRoundedIcon fontSize="small" />
                 </Button>
               </Stack>
             )}

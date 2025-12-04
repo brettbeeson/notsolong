@@ -32,6 +32,11 @@ const theme = createTheme({
   },
   typography: {
     fontFamily: '"Inter", "Segoe UI", system-ui, -apple-system, sans-serif',
+    
+    h6: {
+      // 
+      lineHeight: 1.4,
+    },
   },
   components: {
     MuiButton: {

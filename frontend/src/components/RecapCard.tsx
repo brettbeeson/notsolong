@@ -59,7 +59,7 @@ const RecapCard = ({
         backgroundColor: highlight ? "rgba(63, 42, 252, 0.05)" : undefined,
       }}
     >
-      <CardContent>
+      <CardContent sx={{ p: { xs: 2.25, md: 3 } }}>
         <Typography variant="h6" gutterBottom>
           “{quote.text}”
         </Typography>
@@ -70,7 +70,15 @@ const RecapCard = ({
           {owned && <Chip size="small" color="secondary" label="Your recap" />}
         </Stack>
       </CardContent>
-      <CardActions sx={{ justifyContent: "space-between", flexWrap: "wrap", gap: 1.5, px: 3, pb: 3 }}>
+      <CardActions
+        sx={{
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 1.5,
+          px: { xs: 2.25, md: 3 },
+          pb: { xs: 2.25, md: 3 },
+        }}
+      >
         <Stack direction="row" spacing={1} flexWrap="wrap">
           <Button
             variant={displayVote === 1 ? "contained" : "outlined"}

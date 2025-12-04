@@ -60,6 +60,11 @@ const CATEGORY_SINGULAR: Record<TitleCategory | "", string> = {
   other: "Title",
 };
 
+const EDGE_TOLERANCE_PX = 24;
+const SWIPE_TRIGGER_DISTANCE_FORWARD_PX = 60;
+const SWIPE_TRIGGER_DISTANCE_BACK_PX = 35;
+const SWIPE_LOCK_RELEASE_MS = 450;
+
 function App() {
   const theme = useTheme();
   const isDesktopNavVisible = useMediaQuery(theme.breakpoints.up("md"));
@@ -92,6 +97,11 @@ function App() {
   const [activeRecapIndex, setActiveRecapIndex] = useState(0);
   const activeRecapIdRef = useRef<number | null>(null);
   const addTitleHintTimer = useRef<number | null>(null);
+  const modalContainerRef = useRef<HTMLDivElement | null>(null);
+  const swipeStartYRef = useRef<number | null>(null);
+  const swipeNavLockRef = useRef(false);
+  const handleNextRef = useRef<(() => Promise<void>) | null>(null);
+  const handleBackRef = useRef<(() => Promise<void>) | null>(null);
   const [isAboutOpen, setAboutOpen] = useState(false);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState<"forward" | "backward">("forward");
@@ -423,6 +433,11 @@ function App() {
     }
   };
 
+  useEffect(() => {
+    handleNextRef.current = handleNext;
+    handleBackRef.current = handleBack;
+  }, [handleBack, handleNext]);
+
   const handleVote = async (quoteId: number, value: -1 | 0 | 1) => {
     if (!bundle || !requireAuth()) return;
     setVoteTarget(quoteId);
@@ -470,6 +485,23 @@ function App() {
     dismissAddTitleHint();
   }, [requireAuth, dismissAddTitleHint]);
 
+  const handleNewTitleCreated = useCallback(
+    (newBundle: TitleBundle) => {
+      setAddTitleOpen(false);
+      resetTitleCountCache();
+      const normalized = normalizeBundle(newBundle);
+      setBundle(normalized);
+      syncVotesFromBundle(normalized);
+      resetHistory(normalized.title.id);
+      setForwardExhausted(false);
+      setEmptyCategory(null);
+      setError(null);
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0, behavior: "auto" });
+      }
+    },
+    [normalizeBundle, resetHistory, resetTitleCountCache, setEmptyCategory, syncVotesFromBundle]
+  );
   const handleResetParamsCleared = useCallback(() => {
     setResetParams(null);
   }, []);
@@ -496,6 +528,36 @@ function App() {
     });
   }, [recapCount, recaps]);
 
+  const attemptEdgeNavigation = useCallback(
+    async (direction: "next" | "prev") => {
+      if (swipeNavLockRef.current || loading) {
+        return;
+      }
+      if (direction === "prev" && !canGoBack) {
+        return;
+      }
+      if (direction === "next" && !canGoForward && isForwardExhausted) {
+        return;
+      }
+
+      swipeNavLockRef.current = true;
+      try {
+        const action = direction === "next" ? handleNextRef.current : handleBackRef.current;
+        if (action) {
+          await action();
+        }
+        if (typeof window !== "undefined") {
+          window.scrollTo({ top: 0, behavior: "auto" });
+        }
+      } finally {
+        window.setTimeout(() => {
+          swipeNavLockRef.current = false;
+        }, SWIPE_LOCK_RELEASE_MS);
+      }
+    },
+    [canGoBack, canGoForward, isForwardExhausted, loading]
+  );
+
   const closeMobileMenu = () => setMobileMenuOpen(false);
   const disableBackNav = !bundle || !canGoBack || loading;
   const disableNextNav = !bundle || loading || (!canGoForward && isForwardExhausted);
@@ -510,7 +572,7 @@ function App() {
     emptyCategory !== null
       ? CATEGORY_OPTIONS.find((option) => option.value === emptyCategory)?.label ?? "All"
       : null;
-  const mobileContentPadding = `calc(4rem + 96px + ${safeAreaInsetBottom})`;
+  const   mobileContentPadding = `calc(5vh + ${safeAreaInsetBottom})`;
   const stageAnimation = isTitleAnimating
     ? `${transitionDirection === "backward" ? slideBackward : slideForward} 0.85s cubic-bezier(0.16, 1, 0.3, 1)`
     : undefined;
@@ -525,12 +587,81 @@ function App() {
     const currentPosition = Math.min(historyIndex + 1, totalTitleCount);
     return `${typeLabel} ${currentPosition} of ${totalTitleCount}`;
   }, [category, historyIndex, historyItems.length, totalTitleCount]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const isTouchCapable =
+      "ontouchstart" in window || (typeof navigator !== "undefined" && navigator.maxTouchPoints > 0);
+    if (!isTouchCapable || isOverlayOpen) {
+      swipeStartYRef.current = null;
+      return;
+    }
+
+    const getScrollElement = () =>
+      document.scrollingElement || document.documentElement || document.body;
+
+    const isAtTop = () => {
+      const scrollElement = getScrollElement();
+      const scrollTop = window.scrollY ?? window.pageYOffset ?? scrollElement?.scrollTop ?? 0;
+      return scrollTop <= EDGE_TOLERANCE_PX;
+    };
+
+    const isAtBottom = () => {
+      const scrollElement = getScrollElement();
+      if (!scrollElement) return false;
+      const scrollTop = window.scrollY ?? window.pageYOffset ?? scrollElement.scrollTop;
+      const viewportHeight = window.innerHeight || scrollElement.clientHeight;
+      const scrollHeight = scrollElement.scrollHeight;
+      return scrollHeight - (scrollTop + viewportHeight) <= EDGE_TOLERANCE_PX;
+    };
+
+    const handleTouchStart = (event: TouchEvent) => {
+      if (isOverlayOpen || event.touches.length !== 1) return;
+      swipeStartYRef.current = event.touches[0]?.clientY ?? null;
+    };
+
+    const handleTouchEnd = (event: TouchEvent) => {
+      if (swipeStartYRef.current === null || event.changedTouches.length === 0) {
+        swipeStartYRef.current = null;
+        return;
+      }
+      const touchEndY = event.changedTouches[0]?.clientY ?? swipeStartYRef.current;
+      const deltaY = touchEndY - swipeStartYRef.current;
+      swipeStartYRef.current = null;
+
+      if (deltaY > SWIPE_TRIGGER_DISTANCE_BACK_PX && isAtTop()) {
+        void attemptEdgeNavigation("prev");
+        return;
+      }
+
+      if (deltaY < -SWIPE_TRIGGER_DISTANCE_FORWARD_PX && isAtBottom()) {
+        void attemptEdgeNavigation("next");
+      }
+    };
+
+    const handleTouchCancel = () => {
+      swipeStartYRef.current = null;
+    };
+
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchend", handleTouchEnd, { passive: true });
+    window.addEventListener("touchcancel", handleTouchCancel);
+
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchend", handleTouchEnd);
+      window.removeEventListener("touchcancel", handleTouchCancel);
+    };
+  }, [attemptEdgeNavigation, isOverlayOpen]);
   
   return (
     <Container
       component="main"
       maxWidth="lg"
       disableGutters
+      ref={modalContainerRef}
       sx={{
         width: "100%",
         display: "flex",
@@ -598,6 +729,7 @@ function App() {
               backgroundColor: "transparent",
               border: "none",
               "&:hover": { backgroundColor: "transparent" },
+              display: { xs: "none", md: "inline-flex" },
             }}
           >
             <HelpOutlineRoundedIcon />
@@ -667,6 +799,7 @@ function App() {
         onLogout={logout}
         onOpenAuth={() => setAuthOpen(true)}
         onAddTitle={handleAddTitleRequest}
+        onOpenAbout={() => setAboutOpen(true)}
       />
 
       <Box
@@ -781,11 +914,7 @@ function App() {
       <NewTitleDialog
         open={isAddTitleOpen}
         onClose={() => setAddTitleOpen(false)}
-        onCreated={() => {
-          setAddTitleOpen(false);
-          resetTitleCountCache();
-          void restartTitleFeed();
-        }}
+        onCreated={handleNewTitleCreated}
       />
 
       <AuthDialog
@@ -793,6 +922,7 @@ function App() {
         onClose={() => setAuthOpen(false)}
         resetParams={resetParams}
         onResetParamsCleared={handleResetParamsCleared}
+        modalContainer={modalContainerRef.current}
       />
 
       {isAccountOpen && user && (

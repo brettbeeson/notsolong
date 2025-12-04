@@ -1,4 +1,5 @@
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import { Box, Button, Drawer, IconButton, Stack, Typography } from "@mui/material";
 
 import type { User } from "../types/api";
@@ -12,6 +13,7 @@ interface MobileMenuProps {
   onLogout: () => void;
   onOpenAuth: () => void;
   onAddTitle: () => void;
+  onOpenAbout: () => void;
 }
 
 const MobileMenu = ({
@@ -22,6 +24,7 @@ const MobileMenu = ({
   onLogout,
   onOpenAuth,
   onAddTitle,
+  onOpenAbout,
 }: MobileMenuProps) => {
   const mobileAccountName = user ? getDisplayName(user) : "";
   const mobileEmailName = user && user.email ? user.email : "";
@@ -95,6 +98,18 @@ const MobileMenu = ({
               Log in
             </Button>
           )}
+          <Button
+            fullWidth
+            variant="text"
+            startIcon={<HelpOutlineRoundedIcon />}
+            sx={{ mt: 2, justifyContent: "flex-start" }}
+            onClick={() => {
+              onOpenAbout();
+              onClose();
+            }}
+          >
+            About
+          </Button>
         </Box>
       </Stack>
     </Drawer>

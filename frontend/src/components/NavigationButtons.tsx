@@ -1,6 +1,6 @@
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
-import { Button, Stack, Typography, type ButtonProps } from "@mui/material";
+import { Button, Stack, Typography, useMediaQuery, useTheme, type ButtonProps } from "@mui/material";
 
 interface NavigationButtonsProps {
   onBack: () => void;
@@ -25,13 +25,16 @@ const NavigationButtons = ({
   size = "large",
   statusLabel,
 }: NavigationButtonsProps) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const showIconsOnly = iconOnly || isMobile;
   const buttonProps: Partial<ButtonProps> = {
     variant,
     size,
     color: "primary",
     fullWidth,
   };
-
+  
   return (
     <Stack direction="row" spacing={1.5} flexGrow={fullWidth ? 1 : 0} alignItems="center">
       <Button
@@ -39,11 +42,11 @@ const NavigationButtons = ({
         onClick={onBack}
         disabled={disableBack}
         aria-label="Show previous title"
-        startIcon={!iconOnly ? <ArrowBackRoundedIcon /> : undefined}
+        startIcon={!showIconsOnly ? <ArrowBackRoundedIcon /> : undefined}
       >
-        {iconOnly ? <ArrowBackRoundedIcon /> : "Previous"}
+        {showIconsOnly ? <ArrowBackRoundedIcon /> : "Prev"}
       </Button>
-      {statusLabel && !iconOnly && (
+      {statusLabel && !showIconsOnly && (
         <Typography
           variant="body2"
           color="text.secondary"
@@ -57,9 +60,9 @@ const NavigationButtons = ({
         onClick={onNext}
         disabled={disableNext}
         aria-label="Show next title"
-        endIcon={!iconOnly ? <ArrowForwardRoundedIcon /> : undefined}
+        endIcon={!showIconsOnly ? <ArrowForwardRoundedIcon /> : undefined}
       >
-        {iconOnly ? <ArrowForwardRoundedIcon /> : "Next"}
+        {showIconsOnly ? <ArrowForwardRoundedIcon /> : "Next"}
       </Button>
     </Stack>
   );

@@ -1,7 +1,9 @@
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import ArrowUpwardRoundedIcon from "@mui/icons-material/ArrowUpwardRounded";
+import ArrowDownwardRoundedIcon from "@mui/icons-material/ArrowDownwardRounded";
 import FilterAltRoundedIcon from "@mui/icons-material/FilterAltRounded";
-import { AppBar, BottomNavigation, BottomNavigationAction, Menu, MenuItem, Toolbar } from "@mui/material";
+import { AppBar, BottomNavigation, BottomNavigationAction, Menu, MenuItem, Toolbar, useMediaQuery, useTheme } from "@mui/material";
 import { useEffect, useState } from "react";
 
 import { CATEGORY_OPTIONS } from "../constants/categories";
@@ -48,8 +50,18 @@ const useVisualViewportOffset = () => {
 
 const BottomBar = ({ onBack, onNext, disableBack, disableNext, category, onCategoryChange, nextExhausted = false }: BottomBarProps) => {
   const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
+  const theme = useTheme();
+  const showLabels = useMediaQuery(theme.breakpoints.up("sm"));
+  const isMobile = !showLabels;
   const viewportOffset = useVisualViewportOffset();
-  const selectedLabel = CATEGORY_OPTIONS.find((option) => option.value === category)?.label ?? "All";
+  const selectedOption = CATEGORY_OPTIONS.find((option) => option.value === category);
+  const selectedLabel = selectedOption
+    ? selectedOption.label === "All"
+      ? "All Titles"
+      : selectedOption.label
+    : "All Titles";
+  const prevIcon = isMobile ? <ArrowUpwardRoundedIcon /> : <ArrowBackRoundedIcon />;
+  const nextIcon = isMobile ? <ArrowDownwardRoundedIcon /> : <ArrowForwardRoundedIcon />;
 
   const closeFilterMenu = () => setFilterAnchor(null);
 
@@ -69,7 +81,7 @@ const BottomBar = ({ onBack, onNext, disableBack, disableNext, category, onCateg
     >
       <Toolbar disableGutters sx={{ justifyContent: "center" }}>
         <BottomNavigation
-          showLabels
+          showLabels={showLabels}
           sx={(theme) => ({
             width: "min(520px, 100%)",
             backgroundColor: "transparent",
@@ -86,19 +98,20 @@ const BottomBar = ({ onBack, onNext, disableBack, disableNext, category, onCateg
           })}
         >
           <BottomNavigationAction
-            label="Back"
-            icon={<ArrowBackRoundedIcon />}
+            label={showLabels ? "Prev" : undefined}
+            icon={prevIcon}
             onClick={onBack}
             disabled={disableBack}
           />
           <BottomNavigationAction
             label={selectedLabel}
+            showLabel={!showLabels}
             icon={<FilterAltRoundedIcon />}
             onClick={(event) => setFilterAnchor(event.currentTarget)}
           />
           <BottomNavigationAction
-            label="Next"
-            icon={<ArrowForwardRoundedIcon />}
+            label={showLabels ? "Next" : undefined}
+            icon={nextIcon}
             onClick={onNext}
             disabled={disableNext}
             sx={(theme) => ({

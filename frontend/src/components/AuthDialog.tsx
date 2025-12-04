@@ -37,6 +37,7 @@ interface AuthDialogProps {
   initialView?: AuthView;
   resetParams?: ResetParams | null;
   onResetParamsCleared?: () => void;
+  modalContainer?: Element | null;
 }
 
 const AuthDialog = ({
@@ -45,6 +46,7 @@ const AuthDialog = ({
   initialView = "login",
   resetParams = null,
   onResetParamsCleared,
+  modalContainer,
 }: AuthDialogProps) => {
   const {
     login,
@@ -596,7 +598,7 @@ const AuthDialog = ({
         onOpen={handleDrawerOpen}
         disableSwipeToOpen
         aria-label={title}
-        ModalProps={{ keepMounted: true }}
+        ModalProps={{ keepMounted: true, container: modalContainer ?? undefined }}
       >
         <Box px={2} py={3}>{formContent}</Box>
       </SwipeableDrawer>
@@ -604,7 +606,14 @@ const AuthDialog = ({
   }
 
   return (
-    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="xs" aria-label={title}>
+    <Dialog
+      open={open}
+      onClose={handleDialogClose}
+      fullWidth
+      maxWidth="xs"
+      aria-label={title}
+      container={modalContainer ?? undefined}
+    >
       <DialogContent>{formContent}</DialogContent>
     </Dialog>
   );
