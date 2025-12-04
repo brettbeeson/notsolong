@@ -69,6 +69,14 @@ class TitleViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewsets.
         title = self.get_object()
         return Response(self._build_summary(title))
 
+    @action(detail=False, methods=["get"], url_path="count", permission_classes=[AllowAny])
+    def count(self, request):
+        """Return the total number of titles for the optional category filter."""
+
+        category = request.query_params.get("category")
+        queryset = self._filter_by_category(self.get_queryset(), category)
+        return Response({"count": queryset.count()})
+
     def _filter_by_category(self, queryset: QuerySet[Title], category: str | None) -> QuerySet[Title]:
         if category:
             if category not in TitleCategory.values:

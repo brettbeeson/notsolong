@@ -159,6 +159,8 @@ ACCOUNT_EMAIL_VERIFICATION = "none"
 
 REST_AUTH = {
     "USE_JWT": True,
+    # return access/refresh tokens in JSON response body (not HttpOnly cookies)
+    "JWT_AUTH_HTTPONLY": False,
     "TOKEN_MODEL": None,
     "USER_DETAILS_SERIALIZER": "accounts.serializers.UserSerializer",
     "LOGIN_SERIALIZER": "accounts.serializers.TurnstileLoginSerializer",
