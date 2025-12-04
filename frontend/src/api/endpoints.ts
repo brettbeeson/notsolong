@@ -51,6 +51,14 @@ export const fetchTitleSummary = async (id: number) => {
   return data;
 };
 
+export const fetchTitleCount = async (category?: TitleCategory) => {
+  const params = category ? { category } : undefined;
+  const { data } = await apiClient.get<{ count: number }>("/titles/count/", {
+    params,
+  });
+  return data.count;
+};
+
 export const createTitle = async (
   payload: Pick<Title, "name" | "category" | "author">
 ) => {

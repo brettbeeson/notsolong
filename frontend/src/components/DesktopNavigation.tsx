@@ -6,9 +6,10 @@ interface DesktopNavigationProps {
   onNext: () => void;
   disableBack?: boolean;
   disableNext?: boolean;
+  statusLabel?: string | null;
 }
 
-const DesktopNavigation = ({ onBack, onNext, disableBack, disableNext }: DesktopNavigationProps) => {
+const DesktopNavigation = ({ onBack, onNext, disableBack, disableNext, statusLabel }: DesktopNavigationProps) => {
   return (
     <Stack direction="row" alignItems="center" spacing={1} role="toolbar" aria-label="Desktop navigation controls">
       <NavigationButtons
@@ -18,6 +19,7 @@ const DesktopNavigation = ({ onBack, onNext, disableBack, disableNext }: Desktop
         disableNext={disableNext}
         variant="outlined"
         size="medium"
+        statusLabel={statusLabel ?? undefined}
       />
     </Stack>
   );

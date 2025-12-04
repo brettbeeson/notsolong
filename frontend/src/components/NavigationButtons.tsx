@@ -1,6 +1,6 @@
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
-import { Button, Stack, type ButtonProps } from "@mui/material";
+import { Button, Stack, Typography, type ButtonProps } from "@mui/material";
 
 interface NavigationButtonsProps {
   onBack: () => void;
@@ -11,6 +11,7 @@ interface NavigationButtonsProps {
   fullWidth?: boolean;
   iconOnly?: boolean;
   size?: ButtonProps["size"];
+  statusLabel?: string;
 }
 
 const NavigationButtons = ({
@@ -22,6 +23,7 @@ const NavigationButtons = ({
   fullWidth = false,
   iconOnly = false,
   size = "large",
+  statusLabel,
 }: NavigationButtonsProps) => {
   const buttonProps: Partial<ButtonProps> = {
     variant,
@@ -31,7 +33,7 @@ const NavigationButtons = ({
   };
 
   return (
-    <Stack direction="row" spacing={1} flexGrow={fullWidth ? 1 : 0} alignItems="center">
+    <Stack direction="row" spacing={1.5} flexGrow={fullWidth ? 1 : 0} alignItems="center">
       <Button
         {...buttonProps}
         onClick={onBack}
@@ -41,6 +43,15 @@ const NavigationButtons = ({
       >
         {iconOnly ? <ArrowBackRoundedIcon /> : "Previous"}
       </Button>
+      {statusLabel && !iconOnly && (
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ whiteSpace: "nowrap", fontWeight: 600, minWidth: 110, textAlign: "center" }}
+        >
+          {statusLabel}
+        </Typography>
+      )}
       <Button
         {...buttonProps}
         onClick={onNext}

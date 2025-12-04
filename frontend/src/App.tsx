@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isAxiosError } from "axios";
-import type { PointerEvent as ReactPointerEvent } from "react";
 import {
   Alert,
   Box,
   Button,
   Container,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   IconButton,
   Link,
   Stack,
@@ -14,11 +16,13 @@ import {
   useTheme,
 } from "@mui/material";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
+import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import { attentionPulse, slideBackward, slideForward } from "./theme/animations";
 
 import "./App.css";
 import {
   deleteRecap,
+  fetchTitleCount,
   fetchRandomTitle,
   fetchTitleSummary,
   NoTitlesAvailableError,
@@ -47,16 +51,13 @@ type PasswordResetParams = {
   email?: string;
 };
 
-const detectSwipeCapability = () => {
-  if (typeof window === "undefined") {
-    return true;
-  }
-
-  const hasTouchPoints = typeof navigator !== "undefined" ? navigator.maxTouchPoints > 0 : false;
-  const coarsePointer =
-    typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
-
-  return hasTouchPoints || coarsePointer;
+const CATEGORY_SINGULAR: Record<TitleCategory | "", string> = {
+  "": "Title",
+  book: "Book",
+  movie: "Movie",
+  podcast: "Podcast",
+  speech: "Speech",
+  other: "Title",
 };
 
 function App() {
@@ -88,9 +89,10 @@ function App() {
   const [isAccountOpen, setAccountOpen] = useState(false);
   const [userVotes, setUserVotes] = useState<Record<number, -1 | 0 | 1 | undefined>>({});
   const [editingRecap, setEditingRecap] = useState<Recap | null>(null);
-  const swipeStartX = useRef<number | null>(null);
+  const [activeRecapIndex, setActiveRecapIndex] = useState(0);
+  const activeRecapIdRef = useRef<number | null>(null);
   const addTitleHintTimer = useRef<number | null>(null);
-  const [isSwipeCapable, setSwipeCapable] = useState<boolean>(() => detectSwipeCapability());
+  const [isAboutOpen, setAboutOpen] = useState(false);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState<"forward" | "backward">("forward");
   const [isTitleAnimating, setTitleAnimating] = useState(false);
@@ -98,8 +100,32 @@ function App() {
   const [resetParams, setResetParams] = useState<PasswordResetParams | null>(null);
   const [addTitleHintActive, setAddTitleHintActive] = useState(false);
   const [emptyCategory, setEmptyCategory] = useState<TitleCategory | "" | null>(null);
+  const [titleCounts, setTitleCounts] = useState<Record<string, number>>({});
+  const [totalTitleCount, setTotalTitleCount] = useState<number | null>(null);
 
   const isAuthenticated = Boolean(user);
+  const recaps = useMemo(() => {
+    if (!bundle) return [] as Recap[];
+    return [bundle.top_recap, ...bundle.other_recaps].filter(Boolean) as Recap[];
+  }, [bundle]);
+  const recapCount = recaps.length;
+  const activeRecap = recapCount > 0 ? recaps[Math.min(activeRecapIndex, recapCount - 1)] : null;
+  const canShowPreviousRecap = activeRecapIndex > 0;
+  const canShowNextRecap = recapCount > 0 && activeRecapIndex < recapCount - 1;
+
+  useEffect(() => {
+    if (recapCount === 0) {
+      activeRecapIdRef.current = null;
+      setActiveRecapIndex(0);
+      return;
+    }
+    const targetId = activeRecapIdRef.current ?? recaps[0].id;
+    const targetIndex = recaps.findIndex((quote) => quote.id === targetId);
+    const safeIndex = targetIndex >= 0 ? targetIndex : 0;
+    const nextId = recaps[safeIndex]?.id ?? null;
+    activeRecapIdRef.current = nextId;
+    setActiveRecapIndex((prev) => (prev === safeIndex ? prev : safeIndex));
+  }, [recapCount, recaps]);
 
   useEffect(() => {
     if (!isAccountOpen || !isAuthenticated) {
@@ -156,25 +182,6 @@ function App() {
     });
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-      return;
-    }
-
-    const mediaQuery = window.matchMedia("(pointer: coarse)");
-    const updateCapability = () => setSwipeCapable(detectSwipeCapability());
-
-    updateCapability();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", updateCapability);
-      return () => mediaQuery.removeEventListener("change", updateCapability);
-    }
-
-    mediaQuery.addListener(updateCapability);
-    return () => mediaQuery.removeListener(updateCapability);
-  }, []);
-
   const dismissAddTitleHint = useCallback(() => {
     if (typeof window !== "undefined" && addTitleHintTimer.current !== null) {
       window.clearTimeout(addTitleHintTimer.current);
@@ -195,9 +202,16 @@ function App() {
     }, 1800);
   }, []);
 
-useEffect(() => () => {
-  dismissAddTitleHint();
-}, [dismissAddTitleHint]);
+  const resetTitleCountCache = useCallback(() => {
+    setTitleCounts({});
+    setTotalTitleCount(null);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      dismissAddTitleHint();
+    };
+  }, [dismissAddTitleHint]);
 
   const requireAuth = useCallback(() => {
     if (!user) {
@@ -310,6 +324,37 @@ useEffect(() => () => {
   useEffect(() => {
     loadRandom(true);
   }, [loadRandom]);
+
+  useEffect(() => {
+    const categoryKey = category || "all";
+    const cached = titleCounts[categoryKey];
+    if (typeof cached === "number") {
+      setTotalTitleCount(cached);
+      return;
+    }
+    setTotalTitleCount(null);
+    let isCancelled = false;
+
+    const loadCount = async () => {
+      try {
+        const count = await fetchTitleCount(category || undefined);
+        if (!isCancelled) {
+          setTitleCounts((prev) => ({ ...prev, [categoryKey]: count }));
+          setTotalTitleCount(count);
+        }
+      } catch (err) {
+        if (!isCancelled) {
+          console.error("Failed to load title count", err);
+        }
+      }
+    };
+
+    void loadCount();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [category, titleCounts]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -425,51 +470,37 @@ useEffect(() => () => {
     dismissAddTitleHint();
   }, [requireAuth, dismissAddTitleHint]);
 
-  const beginSwipe = (clientX: number, target: EventTarget | null) => {
-    if (!isSwipeCapable) return;
-    if (loading) return;
-    if (target instanceof HTMLElement) {
-      if (target.closest("button, a, textarea, input, select")) {
-        return;
+  const handleResetParamsCleared = useCallback(() => {
+    setResetParams(null);
+  }, []);
+
+  const handleNextRecap = useCallback(() => {
+    setActiveRecapIndex((prev) => {
+      if (recapCount === 0 || prev >= recapCount - 1) {
+        return prev;
       }
-    }
-    swipeStartX.current = clientX;
-  };
+      const nextIndex = prev + 1;
+      activeRecapIdRef.current = recaps[nextIndex]?.id ?? null;
+      return nextIndex;
+    });
+  }, [recapCount, recaps]);
 
-  const endSwipe = (clientX: number) => {
-    if (!isSwipeCapable) return;
-    if (swipeStartX.current === null) return;
-    const delta = clientX - swipeStartX.current;
-    swipeStartX.current = null;
-    const threshold = 60;
-    if (Math.abs(delta) < threshold) return;
-    if (delta < 0) {
-      void handleNext();
-    } else if (canGoBack) {
-      void handleBack();
-    }
-  };
-
-  const cancelSwipe = () => {
-    if (!isSwipeCapable) return;
-    swipeStartX.current = null;
-  };
-
-  const handlePointerDown = (event: ReactPointerEvent<HTMLElement>) => {
-    if (!isSwipeCapable) return;
-    if (event.pointerType === "mouse" && event.button !== 0) return;
-    beginSwipe(event.clientX, event.target);
-  };
-
-  const handlePointerUp = (event: ReactPointerEvent<HTMLElement>) => {
-    if (!isSwipeCapable) return;
-    if (event.pointerType === "mouse" && event.button !== 0 && swipeStartX.current === null) return;
-    endSwipe(event.clientX);
-  };
+  const handlePreviousRecap = useCallback(() => {
+    setActiveRecapIndex((prev) => {
+      if (recapCount === 0 || prev <= 0) {
+        return prev;
+      }
+      const nextIndex = prev - 1;
+      activeRecapIdRef.current = recaps[nextIndex]?.id ?? null;
+      return nextIndex;
+    });
+  }, [recapCount, recaps]);
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
   const disableBackNav = !bundle || !canGoBack || loading;
   const disableNextNav = !bundle || loading || (!canGoForward && isForwardExhausted);
+  const disableRecapBack = loading || !canShowPreviousRecap;
+  const disableRecapNext = loading || !canShowNextRecap;
   const isOverlayOpen =
     isMobileMenuOpen || isRecapDialogOpen || isAddTitleOpen || isAuthOpen || isAccountOpen;
   const mobileMenuButtonAnimation = addTitleHintActive
@@ -483,6 +514,17 @@ useEffect(() => () => {
   const stageAnimation = isTitleAnimating
     ? `${transitionDirection === "backward" ? slideBackward : slideForward} 0.85s cubic-bezier(0.16, 1, 0.3, 1)`
     : undefined;
+  const titleProgressLabel = useMemo(() => {
+    if (historyIndex < 0 || historyItems.length === 0) {
+      return null;
+    }
+    if (totalTitleCount === null || totalTitleCount === 0) {
+      return null;
+    }
+    const typeLabel = CATEGORY_SINGULAR[category] ?? "Title";
+    const currentPosition = Math.min(historyIndex + 1, totalTitleCount);
+    return `${typeLabel} ${currentPosition} of ${totalTitleCount}`;
+  }, [category, historyIndex, historyItems.length, totalTitleCount]);
   
   return (
     <Container
@@ -508,7 +550,7 @@ useEffect(() => () => {
         flexWrap="wrap"
         sx={{ gap: { xs: 1.5, md: 2 } }}
       >
-        <Stack direction="row" spacing={1.25} alignItems="center" flexGrow={1} minWidth={0}>
+        <Stack direction="row" spacing={1} alignItems="center" flexGrow={1} minWidth={0}>
           <Link
             href="/"
             underline="none"
@@ -518,7 +560,7 @@ useEffect(() => () => {
               component="img"
               src={logoUrl}
               alt="Not So Long logo"
-              sx={{ width: 32, height: 32, borderRadius: 1 }}
+              sx={{ width: { xs: 32, md: 64 }, height: { xs: 32, md: 64 }, borderRadius: 1 }}
             />
           </Link>
           <Stack spacing={0.5} minWidth={0}>
@@ -545,6 +587,21 @@ useEffect(() => () => {
               Find the best recap: as short as possible, but no shorter!
             </Typography>
           </Stack>
+          <IconButton
+            aria-label="About Not So Long"
+            onClick={() => setAboutOpen(true)}
+            sx={{
+              ml: { xs: 0.5, md: 1 },
+              p: 0.75,
+              borderRadius: "50%",
+              color: textPrimary,
+              backgroundColor: "transparent",
+              border: "none",
+              "&:hover": { backgroundColor: "transparent" },
+            }}
+          >
+            <HelpOutlineRoundedIcon />
+          </IconButton>
         </Stack>
         <Stack
           direction="row"
@@ -632,6 +689,7 @@ useEffect(() => () => {
               onNext={handleNext}
               disableBack={disableBackNav}
               disableNext={disableNextNav}
+              statusLabel={titleProgressLabel ?? undefined}
             />
           </Box>
         </Stack>
@@ -649,11 +707,9 @@ useEffect(() => () => {
           px: { xs: 0, md: "1.5rem" },
           display: "flex",
           justifyContent: "center",
+          alignItems: "stretch",
+          flexGrow: 1,
         }}
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={cancelSwipe}
-        onPointerCancel={cancelSwipe}
       >
         <Box
           sx={{
@@ -664,11 +720,15 @@ useEffect(() => () => {
             justifyContent: "center",
             willChange: "transform, opacity",
             animation: stageAnimation,
+            flexGrow: 1,
           }}
         >
           <TitleViewer
             bundle={bundle}
             loading={loading}
+            activeRecap={activeRecap}
+            recapIndex={activeRecapIndex}
+            recapCount={recapCount}
             onVote={handleVote}
             voteDisabledFor={voteTarget}
             userVotes={userVotes}
@@ -680,6 +740,10 @@ useEffect(() => () => {
             }}
             onPromptAddTitle={promptAddTitleHint}
             emptyCategoryLabel={emptyCategoryLabel}
+            onNextRecap={handleNextRecap}
+            onPreviousRecap={handlePreviousRecap}
+            disableNextRecap={disableRecapNext}
+            disablePreviousRecap={disableRecapBack}
           />
         </Box>
       </Box>
@@ -719,6 +783,7 @@ useEffect(() => () => {
         onClose={() => setAddTitleOpen(false)}
         onCreated={() => {
           setAddTitleOpen(false);
+          resetTitleCountCache();
           void restartTitleFeed();
         }}
       />
@@ -727,7 +792,7 @@ useEffect(() => () => {
         open={isAuthOpen}
         onClose={() => setAuthOpen(false)}
         resetParams={resetParams}
-        onResetParamsCleared={() => setResetParams(null)}
+        onResetParamsCleared={handleResetParamsCleared}
       />
 
       {isAccountOpen && user && (
@@ -740,6 +805,22 @@ useEffect(() => () => {
           }}
         />
       )}
+
+      <Dialog open={isAboutOpen} onClose={() => setAboutOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>About Not So Long</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2}>
+            <Typography>
+              A "Not So Long" is a 1 to 100 word summary that captures the essence of a 
+              movie or book. It usually references the work, is punchy and unexpected. Often it only makes 
+              sense if you've seen the work!
+            </Typography>
+            <Typography variant="body2" color={textSecondary}>
+              "Make things as simple as possible, but no simpler." -- Albert Einstein
+            </Typography>
+          </Stack>
+        </DialogContent>
+      </Dialog>
     </Container>
   );
 }
