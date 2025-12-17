@@ -5,6 +5,13 @@ import react from "@vitejs/plugin-react";
 export default defineConfig(({ mode }) => ({
   base: mode === "development" ? "/" : "/static/",
   plugins: [react()],
+  build: {
+    // When the frontend is served as static files (e.g. by Django/WhiteNoise),
+    // sourcemaps are required for TS/TSX breakpoints to bind in DevTools/VS Code.
+    // Keep this opt-in to avoid shipping source in production unintentionally.
+    sourcemap: process.env.VITE_SOURCEMAP === "true",
+    
+  },
   server: {
     host: true,
     allowedHosts: ["silverlinux.local"],

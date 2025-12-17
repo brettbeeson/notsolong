@@ -1,0 +1,25 @@
+[Unit]
+Description=NotSoLong Postgres
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=notsolong-db
+Image=docker.io/library/postgres:18
+EnvironmentFile=%h/deploy/notsolong/.env
+Volume=notsolong-pgdata:/var/lib/postgresql/
+Volume=%h/deploy/notsolong/db-init:/docker-entrypoint-initdb.d:ro,Z
+Network=notsolong
+
+# Mark container healthy when Postgres is ready to accept connections.
+HealthCmd=pg_isready -h 127.0.0.1 -U postgres
+HealthInterval=10s
+HealthTimeout=5s
+HealthRetries=5
+HealthStartPeriod=20s
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

@@ -43,7 +43,6 @@ user:
 	@echo "Optional DJANGO_USER_USERNAME provides the profile name"
 	$(PYTHON) manage.py createuser
 
-
 clean:
 	find . -name "__pycache__" -type d -exec rm -rf {} +
 

@@ -10,10 +10,12 @@ WORKDIR /app/frontend
 # The ${VITE_API_BASE_URL} below is *not* an env var, but a build arg
 ARG VITE_GOOGLE_CLIENT_ID
 ARG VITE_TURNSTILE_SITE_KEY
+ARG VITE_SOURCEMAP
 # Bake into the environment for the build so Vite can pick them up
 # via import.meta.env.VITE_...
 ENV VITE_TURNSTILE_SITE_KEY=${VITE_TURNSTILE_SITE_KEY}
 ENV VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
+ENV VITE_SOURCEMAP=${VITE_SOURCEMAP}
 
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
@@ -27,8 +29,7 @@ RUN npm run build
 FROM docker.io/library/python:3.13-slim AS backend
 
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1  
+    PYTHONDONTWRITEBYTECODE=1 
 
 RUN apt-get update \
     && apt-get install --no-install-recommends -y build-essential libpq-dev \
@@ -40,14 +41,19 @@ COPY backend /app
 COPY --from=frontend-builder /app/frontend/dist /app/frontend_dist
 
 RUN pip install --upgrade pip \
-    && pip install --no-cache-dir --root-user-action=ignore .
+    && pip install --root-user-action=ignore .
 
 
 ENV DJANGO_SETTINGS_MODULE=notsolong.settings.prod \
     ENV=prod \
     DJANGO_SECRET_KEY=dummy_build_secret \
+    DJANGO_DB_PASSWORD=dummy \
+    DJANGO_DB_USER=dummy \
+    DJANGO_DB_NAME=dummy \
+    DJANGO_DB_HOST=dummy \
     FRONTEND_DIST_DIR=/app/frontend_dist
 
+# Settings above just to enable run collectstatic at *build* time
 RUN python manage.py collectstatic --noinput
 
 # Clear build-time secret; runtime secret injected via env file
@@ -57,4 +63,5 @@ RUN chmod +x scripts/entrypoint.sh
 
 ARG HOST_PORT
 EXPOSE ${HOST_PORT}
+
 CMD ["/app/scripts/entrypoint.sh"]

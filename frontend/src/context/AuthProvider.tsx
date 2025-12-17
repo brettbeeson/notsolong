@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { isAxiosError } from "axios";
 
 import { setAuthToken } from "../api/client";
+import { clearStoredTokens, getStoredTokens, setStoredTokens } from "../auth/storage";
 import {
   confirmPasswordReset as confirmPasswordResetRequest,
   fetchCurrentUser,
@@ -16,7 +18,9 @@ import type { AuthSession, Tokens, User } from "../types/api";
 import { AuthContext } from "./AuthContext";
 import type { AuthContextValue } from "./types";
 
-const STORAGE_KEY = "notsolong-auth";
+// Enable extra auth diagnostics in dev, or by setting VITE_AUTH_DEBUG=true.
+// This keeps production console noise low while still allowing troubleshooting.
+const AUTH_DEBUG = true; //import.meta.env.DEV || import.meta.env.VITE_AUTH_DEBUG === "true";
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -26,30 +30,53 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const persistTokens = useCallback((next: Tokens | null) => {
     setTokens(next);
     if (next) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      setStoredTokens(next);
       setAuthToken(next.access);
     } else {
-      localStorage.removeItem(STORAGE_KEY);
+      clearStoredTokens();
       setAuthToken(null);
     }
   }, []);
 
   const hydrate = useCallback(async () => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) {
+    // Hydration restores tokens from localStorage so users stay logged in across reloads.
+    // If the access token expired (common after tab closure), we attempt to refresh it
+    // using the long-lived refresh token before clearing the session.
+    if (AUTH_DEBUG) console.debug("[auth] hydrate: start");
+    const parsed = getStoredTokens();
+    if (!parsed) {
+      if (AUTH_DEBUG) console.debug("[auth] hydrate: no stored tokens");
       setLoading(false);
       return;
     }
     try {
-      const parsed: Tokens = JSON.parse(stored);
+      if (AUTH_DEBUG) console.debug("[auth] hydrate: found stored tokens");
       persistTokens(parsed);
-      const profile = await fetchCurrentUser();
-      setUser(profile);
+      try {
+        const profile = await fetchCurrentUser();
+        setUser(profile);
+        if (AUTH_DEBUG) console.debug("[auth] hydrate: profile loaded");
+      } catch (error) {
+        const status = isAxiosError(error) ? error.response?.status : undefined;
+        if (status === 401 && parsed.refresh) {
+          if (AUTH_DEBUG) console.debug("[auth] hydrate: access expired (401), refreshing");
+          const { access } = await refreshToken(parsed.refresh);
+          const nextTokens = { ...parsed, access };
+          persistTokens(nextTokens);
+          const profile = await fetchCurrentUser();
+          setUser(profile);
+          if (AUTH_DEBUG) console.debug("[auth] hydrate: refresh ok, profile reloaded");
+        } else {
+          if (AUTH_DEBUG) console.debug("[auth] hydrate: profile fetch failed", { status, error });
+          throw error;
+        }
+      }
     } catch (error) {
       console.warn("Failed to hydrate session", error);
       persistTokens(null);
     } finally {
       setLoading(false);
+      if (AUTH_DEBUG) console.debug("[auth] hydrate: done");
     }
   }, [persistTokens]);
 
@@ -156,14 +183,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     let timer: number | undefined;
     if (tokens?.refresh) {
+      // Keep access tokens fresh while the app is open.
+      // Only log out when refresh is definitively invalid/expired (400/401).
       timer = window.setInterval(async () => {
         try {
+          if (AUTH_DEBUG) console.debug("[auth] refresh: ticking");
           const { access } = await refreshToken(tokens.refresh);
           const nextTokens = { ...tokens, access };
           persistTokens(nextTokens);
+          if (AUTH_DEBUG) console.debug("[auth] refresh: ok");
         } catch (error) {
           console.warn("Token refresh failed", error);
-          logout();
+          const status = isAxiosError(error) ? error.response?.status : undefined;
+          if (status === 401 || status === 400) {
+            if (AUTH_DEBUG) console.debug("[auth] refresh: invalid refresh token, logging out", { status });
+            logout();
+          } else {
+            if (AUTH_DEBUG) console.debug("[auth] refresh: transient failure (keeping session)", { status, error });
+          }
         }
       }, 1000 * 60 * 10);
     }

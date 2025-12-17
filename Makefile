@@ -1,129 +1,106 @@
+# ?= sets if not already defined in environment
+# := sets unconditionally (= alone is lazy evaluation)
+
 SHELL := /bin/bash
+# Fail on errors, undefined variables, and errors in pipelines
+.SHELLFLAGS := -euo pipefail -c
 
 PODMAN ?= podman
+DIST_DIR := dist
+IMAGE_REF := notsolong-web:latest
+# Deploy paths
+# - Local path should be absolute (avoid relying on ~ expansion).
+# - Remote path can use ~ so it expands on the remote host.
+DEPLOY_PATH_LOCAL ?= $(HOME)/deploy/notsolong
+DEPLOY_PATH_REMOTE ?= ~/deploy/notsolong
 
-ENV_FILE = .env.$(ENV)
-
-COMPOSE_REFERENCE := localhost/notsolong_web:latest
-COMPOSE := $(PODMAN) compose -p notsolong -f podman-compose.yml
-EXPORT_TAR := dist/notsolong-images.tar
-REMOTE_HOST := $(REMOTE_HOST)
-REMOTE_USER := $(REMOTE_USER)
-# This will contain compose files, .env.prod (and pgdata), and is referenced in systemd service file
-REMOTE_APP_PATH := /home/$(REMOTE_USER)/notsolong-deploy
-REMOTE_IMAGE_PATH := /tmp/notsolong-images.tar
-
-.PHONY: help run podman-build podman-up podman-down podman-logs podman-seed deploy
-
+.PHONY: run image dist deploy-remote deploy-local env-dev env-prod
+.SILENT:
 .ONESHELL:
 
 help:
-	@echo "Build and deployment"
-	@echo "  deploy        		- Copy to $(REMOTE_HOST) and start service"
-	@echo "Local commands:"
-	@echo "  podman-build       - Build container images"
-	@echo "  podman-up          - Start the Podman pod"
-	@echo "  podman-down        - Stop the Podman pod"
-	@echo "  podman-logs        - Tail logs from the Django container"
-	@echo "  podman-seed        - Run the demo seed command inside the web container"
-	@echo "Development"
-	@echo "  run                - Run both backend and frontend development servers"
+	## Process with sed to extract help from comments
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sed 's/:.*##/ -/' | column -t
+	
 
 #
 # Development
 #
-
-run:
-	cd backend/ && $(MAKE) run & \
+dev: env-dev ## Run both backend and frontend development servers
+	cd backend/ && $(MAKE) run & 
 	cd frontend/ && $(MAKE) run
 
-#
-# Podman
-#
-
-podman-build:
-	@$(LOAD_ENV)
-	$(COMPOSE) build
-
-podman-up:  
-	@$(LOAD_ENV)
-	$(COMPOSE) up -d
-
-podman-down:
-	@$(LOAD_ENV)
-	$(COMPOSE) down
-
-podman-logs:
-	@$(LOAD_ENV)
-	$(COMPOSE) logs -f web
-
-podman-seed:
-	@$(LOAD_ENV)
-	$(COMPOSE) exec web python manage.py createuser
-	$(COMPOSE) exec web python manage.py seed --force
 
 #
-# Deployment
+# Production 
 #
+image: ## Build the notsolong container image
+	$(PODMAN) build \
+		-t $(IMAGE_REF) \
+		-f backend/Containerfile \
+		--build-arg VITE_GOOGLE_CLIENT_ID="$${VITE_GOOGLE_CLIENT_ID:-}" \
+		--build-arg VITE_TURNSTILE_SITE_KEY="$${VITE_TURNSTILE_SITE_KEY:-}" \
+		--build-arg HOST_PORT="$${HOST_PORT:-1111}" \
+		.
 
-deploy:  
-	@echo "Loading production environment for deployment"
-	@$(LOAD_ENV_PROD)
-	@echo "Images with production environment"
-	@$(MAKE) podman-build ENV=prod
-	
-	@echo "Exporting compose image/s to $(EXPORT_TAR)"
-	@mkdir -p $(dir $(EXPORT_TAR))
-	@rm -f $(EXPORT_TAR) || true  # don't fail if the file doesn't exist
-	@IMAGES="$$($(PODMAN) images --filter reference=$(COMPOSE_REFERENCE) --format '{{.Repository}}:{{.Tag}}' | tr '\n' ' ')"; \
-	if [ -z "$$IMAGES" ]; then echo "No notsolong images found. Run 'make podman-build' first."; exit 1; fi; \
-	echo "Saving $$IMAGES to $(EXPORT_TAR)"; \
-	$(PODMAN) save -o $(EXPORT_TAR) $$IMAGES
+dist: env-prod ## Create a deployment dist/ package
+	echo "*Note* - run 'make image' to build the image if necessary"
+	echo "Creating deployment dist in $(DIST_DIR)/..."
+	rm -rf "$(DIST_DIR)"
+	mkdir -p "$(DIST_DIR)"
+	echo "Copying deployment files"
+	cp deploy/quadlets/* "$(DIST_DIR)/"
+	cp deploy/install.sh "$(DIST_DIR)/"
+	cp -L .env "$(DIST_DIR)/.env" # Copy resolved env file (dereference symlink)
+	cp -r backend/db-init "$(DIST_DIR)/db-init"
+	echo "Setting permissions on deployment files"
+	chmod 600 "$(DIST_DIR)/.env"
+	find "$(DIST_DIR)" -maxdepth 1 -type f -exec chmod 600 {} +
+	chmod 700 "$(DIST_DIR)/install.sh"
+	chmod -R 755 "$(DIST_DIR)/db-init/" # All db-init scripts must be readable/executable
+	echo "Exporting $(IMAGE_REF) to ${DIST_DIR}/notsolong.tar"
+	$(PODMAN) save --quiet -o "$(DIST_DIR)/notsolong.tar" "$(IMAGE_REF)"
+	echo "Distribution package ready in $(DIST_DIR)/"
 
-	@echo "Shipping $(EXPORT_TAR) to $(REMOTE_HOST) and loading images"
-	ssh $(REMOTE_HOST) "mkdir -p $(REMOTE_APP_PATH)/pgdata" 
-	rsync -avz --progress $(EXPORT_TAR) $(REMOTE_HOST):$(REMOTE_IMAGE_PATH)
-	ssh $(REMOTE_HOST) "podman load -i $(REMOTE_IMAGE_PATH)"
 
-	@echo "Copying .env.prod and podman-compose.yml to $(REMOTE_HOST):$(REMOTE_APP_PATH)"
-	scp .env.prod $(REMOTE_HOST):$(REMOTE_APP_PATH)/.env.prod
-	scp podman-compose.yml $(REMOTE_HOST):$(REMOTE_APP_PATH)/podman-compose.yml
-		
-	@echo "Installing and starting systemd service on $(REMOTE_HOST)"
-	scp systemd/notsolong.service $(REMOTE_HOST):/tmp/notsolong.service
-	ssh $(REMOTE_HOST) "set -euo pipefail; \
-		sudo loginctl enable-linger $(REMOTE_USER); \
-		install -Dm644 /tmp/notsolong.service \"\$$HOME/.config/systemd/user/notsolong.service\"; \
-		systemctl --user daemon-reload; \
-		systemctl --user enable --now notsolong.service; \
-		systemctl --user restart notsolong.service; \
-		systemctl --user status notsolong.service"
+deploy-remote: env-prod dist ## Deploy the dist/ package to the remote server and install
+	if [ -z "$(SSH)" ]; then \
+		echo "ERROR: SSH variables must be set for remote deployment"; \
+		exit 1; \
+	fi
+	echo "Deploying $(DIST_DIR)/ to $(SSH):$(DEPLOY_PATH_REMOTE)"
+	ssh "$(SSH)" "mkdir -p $(DEPLOY_PATH_REMOTE)"
+	rsync -az --progress --delete "$(DIST_DIR)/" "$(SSH):$(DEPLOY_PATH_REMOTE)/"
+	ssh "$(SSH)" "set -euo pipefail; cd $(DEPLOY_PATH_REMOTE); bash ./install.sh; podman ps"
+	echo "Remote deployment to $(SSH) completed."	
+	echo "Consider setting 'loginctl enable-linger' on remote to allow services to run when not logged in."
 
-	
+
+deploy-local: env-prod dist ## Copy the dist/ to deploy and install to local machine
+	@echo "Deploying locally to $(DEPLOY_PATH_LOCAL)"
+	mkdir -p "$(DEPLOY_PATH_LOCAL)"
+	rm -f "$(DEPLOY_PATH_LOCAL)/*"
+	cp -r "$(DIST_DIR)"/* "$(DEPLOY_PATH_LOCAL)/"
+	cp -r "$(DIST_DIR)"/.* "$(DEPLOY_PATH_LOCAL)/"
+	@echo "Installing quadlets and starting services locally"
+	cd "$(DEPLOY_PATH_LOCAL)"
+	./install.sh 
+	podman ps
+	echo "Local deployment completed."
+
 #
-#   Helpers
+# Helpers
 #
+env-dev:
+	@ENV_VAL=$$(./showenv.sh); \
+	if [ "$$ENV_VAL" != "dev" ]; then \
+		echo "ERROR: environment must be 'dev' (run: make setenv ENV=dev)"; \
+		exit 1; \
+	fi
 
-define LOAD_ENV
-if [ ! -f "$(ENV_FILE)" ]; then
-  echo "ERROR: Env file '$(ENV_FILE)' not found. Use ENV=dev|prod"; 
-  exit 1;
-fi
-echo "Loading environment from $(ENV_FILE)";
-set -a;
-. "$(ENV_FILE)";
-set +a;
-endef
-export LOAD_ENV
-
-define LOAD_ENV_PROD
-if [ ! -f ".env.prod" ]; then
-  echo "ERROR: Env file '.env.prod' not found."; 
-  exit 1;
-fi
-echo "Loading environment from .env.prod";
-set -a;
-. ".env.prod";
-set +a;
-endef
-export LOAD_ENV_PROD
+env-prod:
+	@ENV_VAL=$$(./showenv.sh); \
+	if [ "$$ENV_VAL" != "prod" ]; then \
+		echo "ERROR: environment must be 'prod' (run: make setenv ENV=prod)"; \
+		exit 1; \
+	fi

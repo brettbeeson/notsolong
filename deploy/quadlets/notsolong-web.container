@@ -1,0 +1,22 @@
+[Unit]
+Description=NotSoLong Web (Django + SPA)
+Wants=network-online.target
+After=network-online.target
+Requires=notsolong-db.service
+After=notsolong-db.service
+
+[Container]
+ContainerName=notsolong-web
+Image=localhost/notsolong-web:latest
+EnvironmentFile=%h/deploy/notsolong/.env
+# Expose backend (serves SPA + API). Must be hardcoded, no env vars. Restrict to localhost
+PublishPort=127.0.0.1:1111:8000
+Network=notsolong
+
+HealthCmd=python manage.py check
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

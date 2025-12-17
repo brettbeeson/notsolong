@@ -2,6 +2,9 @@ import os
 
 from .base import *  # noqa
 
+DEBUG = False
+WHITENOISE_AUTOREFRESH = DEBUG
+
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = True
@@ -13,6 +16,7 @@ CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
     "https://notsolong.com",
     "https://app.notsolong.com",
+    "http://localhost:1111",
 ]
 
 # Defaults are required here, as collectstatic runs upon container build...
@@ -20,10 +24,32 @@ CORS_ALLOWED_ORIGINS = [
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("POSTGRES_DB", "notsolong"),
-        "USER": os.environ.get("POSTGRES_USER", "notsolonguser"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "notsolongpassword"),
-        "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
-        "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+        "NAME": os.environ.get("DJANGO_DB_NAME", "notsolong"),
+        "USER": os.environ.get("DJANGO_DB_USER", "notsolong"),
+        "PASSWORD": os.environ["DJANGO_DB_PASSWORD"],
+        "HOST": os.environ["DJANGO_DB_HOST"],
+        "PORT": os.environ.get("DJANGO_DB_PORT", "5432"),
     }
 }  # noqa: F405
+
+
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "%(levelname)s %(asctime)s %(name)s %(message)s",
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        }
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+}

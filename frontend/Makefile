@@ -1,29 +1,25 @@
 SHELL := /bin/bash
 
 .PHONY: install dev build lint clean
+		
+
 
 help:
-	@echo "Available commands:"
-	@echo "  make install   - Install project dependencies"
-	@echo "  make run       - Start development server"
-	@echo "  make build     - Build the project for production"
-	@echo "  make lint      - Run linting on the codebase"
-	@echo "  make clean     - Remove node_modules directory"
+	@echo "Targets:"
+	@awk 'BEGIN {FS=":.*## "} /^[a-zA-Z0-9_.-]+:.*## / {printf "  %-12s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	
 
-install:
+install: ## Install frontend dependencies
 	npm install
 
-run:
+run: ## Run the frontend development server
 	npm run dev -- --host 0.0.0.0 --port ${PORT}
 
-build:
+build: ## Build the frontend for production
 	npm run build
 
-lint:
-	npm run lint || true
-
-clean:
+clean: ## Clean up node_modules
 	rm -rf node_modules
 
-chrome:
+chrome: ## Run a debugging instance of Chrome on port 9222
 	chromium --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-debug &

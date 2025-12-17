@@ -29,7 +29,9 @@ SITE_ID = 1
 SITE_URL = env("DJANGO_SITE_URL", default="http://localhost:8000")
 
 SECRET_KEY = env("DJANGO_SECRET_KEY")
-DEBUG = env.bool("DJANGO_DEBUG", default=False)
+# DEBUG is intentionally *not* driven by an env var.
+# Choose dev/prod by setting DJANGO_SETTINGS_MODULE (e.g. notsolong.settings.dev).
+DEBUG = False
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
 
@@ -139,7 +141,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=365),
     "ROTATE_REFRESH_TOKENS": False,
     "USER_ID_FIELD": "email",
@@ -167,23 +169,3 @@ REST_AUTH = {
     "REGISTER_SERIALIZER": "accounts.serializers.AllauthRegisterSerializer",
 }
 LOGIN_REDIRECT_URL = "/"
-
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "verbose": {
-            "format": "%(levelname)s %(asctime)s %(name)s %(message)s",
-        }
-    },
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "verbose",
-        }
-    },
-    "root": {
-        "handlers": ["console"],
-        "level": "INFO",
-    },
-}

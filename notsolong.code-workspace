@@ -1,0 +1,32 @@
+{
+  "folders": [
+    { "name": "frontend", "path": "./frontend" },
+    { "name": "backend", "path": "./backend" }
+  ],
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Attach to Chrome (:1111)",
+        "type": "chrome",
+        "request": "attach",
+        "port": 9222,
+        "urlFilter": "http://localhost:1111/*",
+        "webRoot": "${workspaceFolder:frontend}",
+        "sourceMaps": true,
+        "sourceMapPathOverrides": {
+          "http://localhost:1111/src/*": "${workspaceFolder:frontend}/src/*",
+          "/src/*": "${workspaceFolder:frontend}/src/*",
+          "../../src/*": "${workspaceFolder:frontend}/src/*"
+        },
+        "resolveSourceMapLocations": [
+          "${workspaceFolder:frontend}/**",
+          "!**/node_modules/**"
+        ]
+      }
+    ]
+  },
+  "settings": {
+    "makefile.configureOnOpen": false
+  }
+}
