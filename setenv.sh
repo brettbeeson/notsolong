@@ -3,6 +3,9 @@ set -euo pipefail
 
 ENV=${1:-}
 
+# Work in script directory
+cd "$(dirname "$0")"
+
 case "$ENV" in
   dev)
     rm -f .env

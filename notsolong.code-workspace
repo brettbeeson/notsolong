@@ -1,7 +1,13 @@
 {
   "folders": [
-    { "name": "frontend", "path": "./frontend" },
-    { "name": "backend", "path": "./backend" }
+    {
+      "name": "frontend",
+      "path": "./frontend"
+    },
+    {
+      "name": "backend",
+      "path": "./backend"
+    }
   ],
   "launch": {
     "version": "0.2.0",
@@ -27,6 +33,7 @@
     ]
   },
   "settings": {
-    "makefile.configureOnOpen": false
+    "makefile.configureOnOpen": false,
+    "python.testing.pytestEnabled": false
   }
 }

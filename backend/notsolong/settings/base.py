@@ -17,28 +17,27 @@ warnings.filterwarnings(
 )
 
 #
-# Do not read the .env file automatically here.
-# Instead, we rely on the environment being set up externally,
+# We do not *read* the .env file automatically here, but the current environment.
+# We rely on the environment being set up externally,
 #
 env = environ.Env()
 
-FRONTEND_DIST_DIR = Path(env("FRONTEND_DIST_DIR"))
+DJANGO_LOGGING = env.bool("DJANGO_LOGGING", default=False)
+
+# FRONTEND_DIST_DIR = Path(env("FRONTEND_DIST_DIR", default=BASE_DIR / "frontend" / "dist"))
+FRONTEND_DIST_DIR = Path("/app/frontend_dist")
 
 SITE_ID = 1
-# not yet used, but may be useful later
 SITE_URL = env("DJANGO_SITE_URL", default="http://localhost:8000")
 
 SECRET_KEY = env("DJANGO_SECRET_KEY")
-# DEBUG is intentionally *not* driven by an env var.
-# Choose dev/prod by setting DJANGO_SETTINGS_MODULE (e.g. notsolong.settings.dev).
-DEBUG = False
+
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
 
 TURNSTILE_SECRET_KEY = env("TURNSTILE_SECRET_KEY", default="")
 GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID", default="")
 GOOGLE_CLIENT_SECRET = env("GOOGLE_CLIENT_SECRET", default="")
-
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -114,9 +113,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
-USE_I18N = True
+LANGUAGE_CODE = "en-au"
+TIME_ZONE = "Australia/Brisbane"
+USE_I18N = False
 USE_TZ = True
 
 STATIC_URL = "/static/"
@@ -130,7 +129,6 @@ if FRONTEND_DIST_DIR.exists():
     STATICFILES_DIRS.append(FRONTEND_DIST_DIR)
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-WHITENOISE_AUTOREFRESH = DEBUG
 WHITENOISE_MAX_AGE = 60 * 60 * 24 * 30
 WHITENOISE_ROOT = BASE_DIR / "public"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -169,3 +167,60 @@ REST_AUTH = {
     "REGISTER_SERIALIZER": "accounts.serializers.AllauthRegisterSerializer",
 }
 LOGIN_REDIRECT_URL = "/"
+
+SYSTEM_LOG_LEVEL = "INFO" if DJANGO_LOGGING else "WARNING"
+APP_LOG_LEVEL = "DEBUG" if DJANGO_LOGGING else "INFO"
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {
+            "format": "(levelname) {name} {message}",
+            "style": "{",
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        }
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": SYSTEM_LOG_LEVEL,
+    },
+    "loggers": {
+        #
+        # App loggers handle their output.
+        # If we don't do this and use propagate, setting level=DEBUG here
+        # will not output if root logger is at higher level.
+        #
+        "notsolong": {
+            "level": APP_LOG_LEVEL,
+            "handlers": ["console"],
+            "propagate": False,
+        },
+        "accounts": {
+            "level": APP_LOG_LEVEL,
+            "handlers": ["console"],
+            "propagate": False,
+        },
+        "api": {
+            "level": APP_LOG_LEVEL,
+            "handlers": ["console"],
+            "propagate": False,
+        },
+        #
+        # system loggers respect global logging level and propagate to root logger
+        #
+        "django.request": {
+            "level": SYSTEM_LOG_LEVEL,
+            "propagate": True,
+        },
+        "django.db.backends": {
+            "level": SYSTEM_LOG_LEVEL, # DEBUG level to log all SQL queries
+            "propagate": True,
+        },
+    },
+}

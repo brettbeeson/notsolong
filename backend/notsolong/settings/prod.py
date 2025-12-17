@@ -3,7 +3,8 @@ import os
 from .base import *  # noqa
 
 DEBUG = False
-WHITENOISE_AUTOREFRESH = DEBUG
+
+WHITENOISE_AUTOREFRESH = False
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = False
@@ -16,7 +17,7 @@ CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
     "https://notsolong.com",
     "https://app.notsolong.com",
-    "http://localhost:1111",
+    "http://localhost:1111", # for local container
 ]
 
 # Defaults are required here, as collectstatic runs upon container build...
@@ -32,24 +33,3 @@ DATABASES = {
     }
 }  # noqa: F405
 
-
-
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "verbose": {
-            "format": "%(levelname)s %(asctime)s %(name)s %(message)s",
-        }
-    },
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "verbose",
-        }
-    },
-    "root": {
-        "handlers": ["console"],
-        "level": "INFO",
-    },
-}
